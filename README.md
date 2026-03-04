@@ -8,12 +8,17 @@
 Un conjunto de utilidades para inspeccionar esquemas de bases de datos SQL Server, generar snapshots de esquema y emitir artefactos de migración (emisor para EF Core). Proyecto modular compuesto por librerías y una herramienta de línea de comandos.
 
 ## Tags
-- .NET 9
-- C#
-- SqlServer
-- CLI
-- Schema Introspection
-- EF Core Migrations
+
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+  <span style="display:inline-block;background:#2d7fbf;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">.NET 9</span>
+  <span style="display:inline-block;background:#6cc24a;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">C#</span>
+  <span style="display:inline-block;background:#f0ad4e;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">SqlServer</span>
+  <span style="display:inline-block;background:#8a6dce;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">CLI</span>
+  <span style="display:inline-block;background:#17a2b8;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">Schema Introspection</span>
+  <span style="display:inline-block;background:#d9534f;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">EF Core Migrations</span>
+  <span style="display:inline-block;background:#5bc0de;color:#0b2a33;padding:4px 10px;border-radius:999px;font-weight:600">Tooling</span>
+  <span style="display:inline-block;background:#343a40;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">Database</span>
+</div>
 
 ## Estado
 - Compilado contra `net9.0`.
