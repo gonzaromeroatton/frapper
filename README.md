@@ -1,5 +1,4 @@
 # Frapper
-Schema migrations for Dapper-first .NET architectures.
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat)
 ![C#](https://img.shields.io/badge/C%23-512BD4?style=flat)
@@ -18,84 +17,6 @@ Un conjunto de utilidades para inspeccionar esquemas de bases de datos SQL Serve
 ![EF Core Migrations](https://img.shields.io/badge/EF%20Core%20Migrations-6F42C1?style=flat)
 ![Tooling](https://img.shields.io/badge/Tooling-343a40?style=flat)
 ![Database](https://img.shields.io/badge/Database-0d6efd?style=flat)
-
-# Frapper
-
-**Migraciones de base de datos para arquitecturas .NET que utilizan Dapper.**
-
-Frapper es una herramienta diseñada para equipos que utilizan **Dapper como ORM principal** y necesitan un mecanismo confiable para **versionar y evolucionar el esquema de la base de datos**, similar a lo que ofrecen las migraciones de Entity Framework.
-
-La idea central es simple: permitir que los equipos mantengan **control total sobre el SQL que ejecutan**, sin renunciar a las ventajas de un sistema de migraciones estructurado.
-
----
-
-# El Problema
-
-En muchos sistemas .NET de alto rendimiento, los equipos prefieren **Dapper** en lugar de Entity Framework debido a varias razones:
-
-- Permite **control total sobre el SQL** ejecutado.
-- Evita el SQL complejo o subóptimo que a veces generan los ORMs.
-- Facilita la optimización manual de consultas críticas.
-- Reduce la complejidad de la capa de acceso a datos.
-- Es más predecible en entornos de producción con cargas elevadas.
-
-Sin embargo, esta decisión introduce una desventaja clara:
-
-**Dapper no provee un sistema de migraciones para versionar el esquema de la base de datos.**
-
-Esto suele llevar a soluciones menos ideales como:
-
-- Scripts SQL manuales
-- Procesos de despliegue frágiles
-- Herramientas externas desconectadas del flujo de desarrollo
-- Inconsistencias entre entornos
-
----
-
-# La Solución
-
-Frapper resuelve este problema introduciendo **migraciones basadas en el esquema real de la base de datos**, sin depender de modelos ORM.
-
-A diferencia de Entity Framework, donde las migraciones se generan a partir de clases C#, Frapper trabaja directamente sobre el **estado actual del esquema en SQL Server**.
-
-El flujo es el siguiente:
-
-1. Frapper lee el esquema actual de la base de datos.
-2. Se genera un **snapshot determinístico** del esquema.
-3. Cuando el esquema cambia, Frapper calcula un **diff estructural**.
-4. El diff se convierte en una **migración compatible con pipelines estilo EF**.
-
-De esta manera, el esquema real de la base de datos se convierte en la **fuente de verdad**.
-
----
-
-# Filosofía del Proyecto
-
-Frapper está diseñado para complementar arquitecturas **Dapper-first**.
-
-La responsabilidad de cada componente queda clara:
-
-| Componente | Responsabilidad |
-|------------|----------------|
-| Dapper | Acceso a datos en tiempo de ejecución |
-| SQL Server | Fuente de verdad del esquema |
-| Frapper | Versionado del esquema y generación de migraciones |
-
-Esto permite que cada herramienta haga exactamente lo que mejor sabe hacer.
-
----
-
-# Flujo de Trabajo
-
-Un flujo típico utilizando Frapper podría verse así:
-
-### 1. Cambiar el esquema de la base de datos
-
-Por ejemplo:
-
-```sql
-ALTER TABLE Orders
-ADD Status NVARCHAR(20) NOT NULL DEFAULT 'Pending';
 
 ## Estado
 - Compilado contra `net9.0`.
