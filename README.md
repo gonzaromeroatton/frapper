@@ -92,7 +92,7 @@ sequenceDiagram
 flowchart TB
     subgraph App
         CLI[CLI]
-        Core[Core (Modelos & Diff)]
+        Core[Core Modelos & Diff]
         Emitter[EF Migration Emitter]
         SqlMod[SqlServer Introspection]
     end
