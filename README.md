@@ -4,6 +4,11 @@
 ![C#](https://img.shields.io/badge/C%23-512BD4?style=flat)
 ![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat)
 ![CLI](https://img.shields.io/badge/CLI-4B32C3?style=flat)
+![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat)
+![Schema Introspection](https://img.shields.io/badge/Schema%20Introspection-17a2b8?style=flat)
+![EF Core Migrations](https://img.shields.io/badge/EF%20Core%20Migrations-6F42C1?style=flat)
+![Tooling](https://img.shields.io/badge/Tooling-343a40?style=flat)
+![Database](https://img.shields.io/badge/Database-0d6efd?style=flat)
 
 Un conjunto de utilidades para inspeccionar esquemas de bases de datos SQL Server, generar snapshots de esquema y emitir artefactos de migración (emisor para EF Core). Proyecto modular compuesto por librerías y una herramienta de línea de comandos.
 
@@ -112,17 +117,6 @@ protected override void Up(MigrationBuilder migrationBuilder)
     """);
 }
 ```
-
-## Tags
-
-![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat)
-![C#](https://img.shields.io/badge/C%23-512BD4?style=flat)
-![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat)
-![CLI](https://img.shields.io/badge/CLI-4B32C3?style=flat)
-![Schema Introspection](https://img.shields.io/badge/Schema%20Introspection-17a2b8?style=flat)
-![EF Core Migrations](https://img.shields.io/badge/EF%20Core%20Migrations-6F42C1?style=flat)
-![Tooling](https://img.shields.io/badge/Tooling-343a40?style=flat)
-![Database](https://img.shields.io/badge/Database-0d6efd?style=flat)
 
 ## Estado
 - Compilado contra `net9.0`.
