@@ -1,24 +1,22 @@
 # Frapper
 
-<span style="display:inline-block;background:#2d7fbf;color:#fff;padding:3px 8px;border-radius:4px;margin-right:6px">.NET</span>
-<span style="display:inline-block;background:#6cc24a;color:#fff;padding:3px 8px;border-radius:4px;margin-right:6px">C#</span>
-<span style="display:inline-block;background:#f0ad4e;color:#fff;padding:3px 8px;border-radius:4px;margin-right:6px">SqlServer</span>
-<span style="display:inline-block;background:#8a6dce;color:#fff;padding:3px 8px;border-radius:4px">CLI</span>
+![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat)
+![C#](https://img.shields.io/badge/C%23-512BD4?style=flat)
+![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat)
+![CLI](https://img.shields.io/badge/CLI-4B32C3?style=flat)
 
 Un conjunto de utilidades para inspeccionar esquemas de bases de datos SQL Server, generar snapshots de esquema y emitir artefactos de migración (emisor para EF Core). Proyecto modular compuesto por librerías y una herramienta de línea de comandos.
 
 ## Tags
 
-<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-  <span style="display:inline-block;background:#2d7fbf;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">.NET 9</span>
-  <span style="display:inline-block;background:#6cc24a;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">C#</span>
-  <span style="display:inline-block;background:#f0ad4e;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">SqlServer</span>
-  <span style="display:inline-block;background:#8a6dce;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">CLI</span>
-  <span style="display:inline-block;background:#17a2b8;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">Schema Introspection</span>
-  <span style="display:inline-block;background:#d9534f;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">EF Core Migrations</span>
-  <span style="display:inline-block;background:#5bc0de;color:#0b2a33;padding:4px 10px;border-radius:999px;font-weight:600">Tooling</span>
-  <span style="display:inline-block;background:#343a40;color:#fff;padding:4px 10px;border-radius:999px;font-weight:600">Database</span>
-</div>
+![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat)
+![C#](https://img.shields.io/badge/C%23-512BD4?style=flat)
+![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat)
+![CLI](https://img.shields.io/badge/CLI-4B32C3?style=flat)
+![Schema Introspection](https://img.shields.io/badge/Schema%20Introspection-17a2b8?style=flat)
+![EF Core Migrations](https://img.shields.io/badge/EF%20Core%20Migrations-6F42C1?style=flat)
+![Tooling](https://img.shields.io/badge/Tooling-343a40?style=flat)
+![Database](https://img.shields.io/badge/Database-0d6efd?style=flat)
 
 ## Estado
 - Compilado contra `net9.0`.
