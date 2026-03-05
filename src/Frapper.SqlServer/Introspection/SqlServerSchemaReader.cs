@@ -1,18 +1,17 @@
-using System.Data;
 using Microsoft.Data.SqlClient;
 using Frapper.Core.Domain.Schema;
-using Frapper.SqlServer.Normalization;
 using Frapper.SqlServer.Internal;
+using Frapper.SqlServer.Normalization;
 
 namespace Frapper.SqlServer.Introspection;
 
 /// <summary>
-/// Reads the database schema from a SQL Server database.
+/// 
 /// </summary>
 public sealed class SqlServerSchemaReader : ISchemaReader
 {
     /// <summary>
-    /// Reads the database schema from a SQL Server database.
+    /// 
     /// </summary>
     /// <param name="connectionString"></param>
     /// <param name="ct"></param>
@@ -22,41 +21,39 @@ public sealed class SqlServerSchemaReader : ISchemaReader
         await using var conn = new SqlConnection(connectionString);
         await conn.OpenAsync(ct);
 
-        // 1) Read tables
+        // 1) Tables
         var tables = new List<(int ObjectId, string Schema, string Name)>();
         await using (var cmd = new SqlCommand(SysCatalogQueries.Tables, conn))
-        await using (var reader = await cmd.ExecuteReaderAsync(ct))
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
         {
-            while (await reader.ReadAsync(ct))
+            while (await r.ReadAsync(ct))
             {
-                var schema = reader.GetString(0);
-                var name = reader.GetString(1);
-                var objectId = reader.GetInt32(2);
-                tables.Add((objectId, schema, name));
+                tables.Add((
+                    ObjectId: r.GetInt32("ObjectId"),
+                    Schema: r.GetString("SchemaName"),
+                    Name: r.GetString("TableName")
+                ));
             }
         }
 
-        // 2) Read columns (grouped by ObjectId)
+        // 2) Columns
         var columnsByObjectId = new Dictionary<int, List<DbColumn>>();
         await using (var cmd = new SqlCommand(SysCatalogQueries.Columns, conn))
-        await using (var reader = await cmd.ExecuteReaderAsync(ct))
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
         {
-            while (await reader.ReadAsync(ct))
+            while (await r.ReadAsync(ct))
             {
-                var objectId = reader.GetInt32(reader.GetOrdinal("ObjectId"));
+                var objectId = r.GetInt32("ObjectId");
 
-                var colName = reader.GetString(reader.GetOrdinal("ColumnName"));
-                var typeName = reader.GetString(reader.GetOrdinal("TypeName"));
-                var maxLength = reader.GetInt16(reader.GetOrdinal("MaxLength"));
-                var precision = reader.GetByte(reader.GetOrdinal("Precision"));
-                var scale = reader.GetByte(reader.GetOrdinal("Scale"));
-                var isNullable = reader.GetBoolean(reader.GetOrdinal("IsNullable"));
-                var isIdentity = reader.GetBoolean(reader.GetOrdinal("IsIdentity"));
-
-                string? defaultDef = null;
-                var defOrdinal = reader.GetOrdinal("DefaultDefinition");
-                if (!await reader.IsDBNullAsync(defOrdinal))
-                    defaultDef = reader.GetString(defOrdinal);
+                var columnId = r.GetInt32("ColumnId");
+                var name = r.GetString("ColumnName");
+                var typeName = r.GetString("TypeName");
+                var maxLength = r.GetInt16("MaxLength");
+                var precision = r.GetByte("Precision");
+                var scale = r.GetByte("Scale");
+                var isNullable = r.GetBoolean("IsNullable");
+                var isIdentity = r.GetBoolean("IsIdentity");
+                var defaultSql = r.GetNullableString("DefaultDefinition");
 
                 var sqlType = SqlServerTypeNormalizer.Normalize(typeName, maxLength, precision, scale);
 
@@ -64,58 +61,60 @@ public sealed class SqlServerSchemaReader : ISchemaReader
                     columnsByObjectId[objectId] = list = new List<DbColumn>();
 
                 list.Add(new DbColumn(
-                    Name: colName,
+                    ColumnId: columnId,
+                    Name: name,
                     Type: sqlType,
                     IsNullable: isNullable,
                     IsIdentity: isIdentity,
-                    DefaultSql: defaultDef
+                    DefaultSql: defaultSql
                 ));
             }
         }
 
-        // 3) Read primary keys
-        var pkByObjectId = new Dictionary<int, (string Name, bool IsClustered, List<string> Columns)>();
+        // 3) Primary keys
+        var pkByObjectId = new Dictionary<int, PrimaryKeyAcc>();
         await using (var cmd = new SqlCommand(SysCatalogQueries.PrimaryKeys, conn))
-        await using (var reader = await cmd.ExecuteReaderAsync(ct))
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
         {
-            while (await reader.ReadAsync(ct))
+            while (await r.ReadAsync(ct))
             {
-                var objectId = reader.GetInt32(reader.GetOrdinal("ObjectId"));
-                var pkName = reader.GetString(reader.GetOrdinal("ConstraintName"));
-                var colName = reader.GetString(reader.GetOrdinal("ColumnName"));
-                var indexType = reader.GetString(reader.GetOrdinal("IndexTypeDesc"));
+                var objectId = r.GetInt32("ObjectId");
+                var pkName = r.GetString("ConstraintName");
+                var colName = r.GetString("ColumnName");
+                var indexTypeDesc = r.GetString("IndexTypeDesc");
 
-                var isClustered = indexType.Contains("CLUSTERED", StringComparison.OrdinalIgnoreCase);
+                var isClustered = indexTypeDesc.Contains("CLUSTERED", StringComparison.OrdinalIgnoreCase);
 
-                if (!pkByObjectId.TryGetValue(objectId, out var entry))
-                {
-                    entry = (pkName, isClustered, new List<string>());
-                    pkByObjectId[objectId] = entry;
-                }
+                if (!pkByObjectId.TryGetValue(objectId, out var acc))
+                    pkByObjectId[objectId] = acc = new PrimaryKeyAcc(pkName, isClustered);
 
-                entry.Columns.Add(colName);
-                pkByObjectId[objectId] = entry;
+                // PK columns come already ordered by key_ordinal in the query
+                acc.Columns.Add(colName);
+
+                // si por algún motivo el índice cambia, conservamos "clustered" si aparece en alguna fila
+                acc.IsClustered |= isClustered;
             }
         }
 
-        // 4) Build deterministic schema objects
-        var dbTables = new List<DbTable>();
+        // 4) Build deterministic schema
+        var dbTables = new List<DbTable>(tables.Count);
 
-        foreach (var t in tables.OrderBy(t => t.Schema).ThenBy(t => t.Name))
+        foreach (var t in tables.OrderBy(x => x.Schema, StringComparer.OrdinalIgnoreCase)
+                                .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
         {
             columnsByObjectId.TryGetValue(t.ObjectId, out var cols);
             cols ??= new List<DbColumn>();
 
-            // Ensure deterministic column ordering
-            var orderedCols = cols.OrderBy(c => c.Name).ToList();
+            // determinístico y semánticamente correcto: por ColumnId
+            var orderedCols = cols.OrderBy(c => c.ColumnId).ToList();
 
             DbPrimaryKey? pk = null;
-            if (pkByObjectId.TryGetValue(t.ObjectId, out var pkEntry))
+            if (pkByObjectId.TryGetValue(t.ObjectId, out var acc))
             {
                 pk = new DbPrimaryKey(
-                    Name: pkEntry.Name,
-                    Columns: pkEntry.Columns, // already ordered by key_ordinal in query
-                    IsClustered: pkEntry.IsClustered
+                    Name: acc.Name,
+                    Columns: acc.Columns,
+                    IsClustered: acc.IsClustered
                 );
             }
 
@@ -132,5 +131,18 @@ public sealed class SqlServerSchemaReader : ISchemaReader
             Tables: dbTables,
             FormatVersion: "1.0"
         );
+    }
+
+    private sealed class PrimaryKeyAcc
+    {
+        public PrimaryKeyAcc(string name, bool isClustered)
+        {
+            Name = name;
+            IsClustered = isClustered;
+        }
+
+        public string Name { get; }
+        public bool IsClustered { get; set; }
+        public List<string> Columns { get; } = new();
     }
 }

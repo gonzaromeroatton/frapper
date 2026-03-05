@@ -20,25 +20,28 @@ internal static class SysCatalogQueries
 
     // Columns
     public const string Columns = """
-    SELECT
-        t.object_id AS ObjectId,
-        c.column_id AS ColumnId,
-        c.name      AS ColumnName,
-        ty.name     AS TypeName,
-        c.max_length AS MaxLength,
-        c.precision AS Precision,
-        c.scale     AS Scale,
-        c.is_nullable AS IsNullable,
-        c.is_identity AS IsIdentity,
-        dc.definition AS DefaultDefinition
-    FROM sys.tables t
-    INNER JOIN sys.columns c ON c.object_id = t.object_id
-    INNER JOIN sys.types ty ON ty.user_type_id = c.user_type_id
-    LEFT JOIN sys.default_constraints dc 
-        ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
-    WHERE t.is_ms_shipped = 0
-    ORDER BY t.object_id, c.column_id;
-    """;
+SELECT
+    t.object_id      AS ObjectId,
+    c.column_id      AS ColumnId,
+    c.name           AS ColumnName,
+    ty.name          AS TypeName,
+    c.max_length     AS MaxLength,
+    c.precision      AS Precision,
+    c.scale          AS Scale,
+    c.is_nullable    AS IsNullable,
+    c.is_identity    AS IsIdentity,
+    dc.definition    AS DefaultDefinition
+FROM sys.tables t
+JOIN sys.columns c 
+  ON c.object_id = t.object_id
+JOIN sys.types ty 
+  ON ty.user_type_id = c.user_type_id
+LEFT JOIN sys.default_constraints dc
+  ON dc.parent_object_id = c.object_id
+ AND dc.parent_column_id = c.column_id
+WHERE t.is_ms_shipped = 0
+ORDER BY t.object_id, c.column_id;
+""";
 
     // Primary Key columns (in order)
     public const string PrimaryKeys = """
