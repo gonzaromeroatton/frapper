@@ -1,0 +1,16 @@
+src/Frapper.Cli/obj/Debug/net9.0/Frapper.Cli.AssemblyInfo.cs
+src/Frapper.Cli/obj/Debug/net9.0/Frapper.Cli.AssemblyInfoInputs.cache
+src/Frapper.Cli/obj/Debug/net9.0/Frapper.Cli.assets.cache
+src/Frapper.Cli/obj/Debug/net9.0/Frapper.Cli.GeneratedMSBuildEditorConfig.editorconfig
+src/Frapper.Core/obj/Debug/net9.0/Frapper.Core.AssemblyInfo.cs
+src/Frapper.Core/obj/Debug/net9.0/Frapper.Core.AssemblyInfoInputs.cache
+src/Frapper.Core/obj/Debug/net9.0/Frapper.Core.assets.cache
+src/Frapper.Core/obj/Debug/net9.0/Frapper.Core.GeneratedMSBuildEditorConfig.editorconfig
+src/Frapper.EFMigrationEmitter/obj/Debug/net9.0/Frapper.EFMigrationEmitter.AssemblyInfo.cs
+src/Frapper.EFMigrationEmitter/obj/Debug/net9.0/Frapper.EFMigrationEmitter.AssemblyInfoInputs.cache
+src/Frapper.EFMigrationEmitter/obj/Debug/net9.0/Frapper.EFMigrationEmitter.assets.cache
+src/Frapper.EFMigrationEmitter/obj/Debug/net9.0/Frapper.EFMigrationEmitter.GeneratedMSBuildEditorConfig.editorconfig
+src/Frapper.SqlServer/obj/Debug/net9.0/Frapper.SqlServer.AssemblyInfo.cs
+src/Frapper.SqlServer/obj/Debug/net9.0/Frapper.SqlServer.AssemblyInfoInputs.cache
+src/Frapper.SqlServer/obj/Debug/net9.0/Frapper.SqlServer.assets.cache
+src/Frapper.SqlServer/obj/Debug/net9.0/Frapper.SqlServer.GeneratedMSBuildEditorConfig.editorconfig
