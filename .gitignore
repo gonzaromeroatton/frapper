@@ -1,16 +1,52 @@
-src/Frapper.Cli/obj/Debug/net9.0/Frapper.Cli.AssemblyInfo.cs
-src/Frapper.Cli/obj/Debug/net9.0/Frapper.Cli.AssemblyInfoInputs.cache
-src/Frapper.Cli/obj/Debug/net9.0/Frapper.Cli.assets.cache
-src/Frapper.Cli/obj/Debug/net9.0/Frapper.Cli.GeneratedMSBuildEditorConfig.editorconfig
-src/Frapper.Core/obj/Debug/net9.0/Frapper.Core.AssemblyInfo.cs
-src/Frapper.Core/obj/Debug/net9.0/Frapper.Core.AssemblyInfoInputs.cache
-src/Frapper.Core/obj/Debug/net9.0/Frapper.Core.assets.cache
-src/Frapper.Core/obj/Debug/net9.0/Frapper.Core.GeneratedMSBuildEditorConfig.editorconfig
-src/Frapper.EFMigrationEmitter/obj/Debug/net9.0/Frapper.EFMigrationEmitter.AssemblyInfo.cs
-src/Frapper.EFMigrationEmitter/obj/Debug/net9.0/Frapper.EFMigrationEmitter.AssemblyInfoInputs.cache
-src/Frapper.EFMigrationEmitter/obj/Debug/net9.0/Frapper.EFMigrationEmitter.assets.cache
-src/Frapper.EFMigrationEmitter/obj/Debug/net9.0/Frapper.EFMigrationEmitter.GeneratedMSBuildEditorConfig.editorconfig
-src/Frapper.SqlServer/obj/Debug/net9.0/Frapper.SqlServer.AssemblyInfo.cs
-src/Frapper.SqlServer/obj/Debug/net9.0/Frapper.SqlServer.AssemblyInfoInputs.cache
-src/Frapper.SqlServer/obj/Debug/net9.0/Frapper.SqlServer.assets.cache
-src/Frapper.SqlServer/obj/Debug/net9.0/Frapper.SqlServer.GeneratedMSBuildEditorConfig.editorconfig
+# .gitignore para proyecto .NET (Frapper)
+# Ignora carpetas y archivos generados que no deben subirse al repositorio
+
+# Builds
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# VS Code (descomenta si quieres versionar settings compartidos)
+.vscode/
+
+# Rider
+.idea/
+*.Rider*
+
+# NuGet
+*.nupkg
+packages/
+project.assets.json
+.nuget/
+
+# Publicaciones / despliegues
+publish/
+**/publish/
+
+# Resultados de pruebas / logs
+TestResults/
+*.trx
+*.log
+
+# Archivos generados por la compilación / runtime
+*.dll
+*.exe
+*.pdb
+*.runtimeconfig.json
+*.deps.json
+
+# System files
+Thumbs.db
+.DS_Store
+
+# Otros temporales
+*.tmp
+*.temp
+
+# Nota: si deseas incluir la carpeta .vscode con settings compartidos, elimina la línea ".vscode/" de este archivo.
