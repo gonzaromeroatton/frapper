@@ -2,6 +2,7 @@ using System.Data;
 using Microsoft.Data.SqlClient;
 using Frapper.Core.Domain.Schema;
 using Frapper.SqlServer.Normalization;
+using Frapper.SqlServer.Internal;
 
 namespace Frapper.SqlServer.Introspection;
 
@@ -54,7 +55,7 @@ public sealed class SqlServerSchemaReader : ISchemaReader
 
                 string? defaultDef = null;
                 var defOrdinal = reader.GetOrdinal("DefaultDefinition");
-                if (!reader.IsDBNull(defOrdinal))
+                if (!await reader.IsDBNullAsync(defOrdinal))
                     defaultDef = reader.GetString(defOrdinal);
 
                 var sqlType = SqlServerTypeNormalizer.Normalize(typeName, maxLength, precision, scale);
