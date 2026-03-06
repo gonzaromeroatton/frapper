@@ -23,7 +23,7 @@
           "Name": "Age",
           "Type": {
             "StoreType": "int",
-            "Length": null,
+            "Length": 10,
             "Precision": null,
             "Scale": null
           },
