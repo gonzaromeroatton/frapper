@@ -11,7 +11,7 @@ namespace Frapper.SqlServer.Introspection;
 public sealed class SqlServerSchemaReader : ISchemaReader
 {
     /// <summary>
-    /// 
+    /// Reads the database schema information from a SQL Server database using the provided connection string. It retrieves information about tables, columns, and primary keys, and constructs a DatabaseSchema object that represents the structure of the database. The method executes multiple queries against the system catalog views to gather the necessary metadata and organizes it into a deterministic schema representation.
     /// </summary>
     /// <param name="connectionString"></param>
     /// <param name="ct"></param>
