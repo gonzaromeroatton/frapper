@@ -13,7 +13,11 @@ internal sealed class SnapshotHandler
         _configuration = configuration;
     }
 
-    public async Task<int> RunAsync(string? rawConnection, string outPath, CancellationToken ct)
+    public async Task<int> RunAsync(
+        string? rawConnection,
+        string outPath,
+        string baseOutPath,
+        CancellationToken ct)
     {
         var connectionString = _configuration.ResolveConnectionString(rawConnection);
 
@@ -28,13 +32,22 @@ internal sealed class SnapshotHandler
 
         var json = SchemaSnapshotSerializer.Serialize(schema);
 
-        var dir = Path.GetDirectoryName(outPath);
-        if (!string.IsNullOrWhiteSpace(dir))
-            Directory.CreateDirectory(dir);
+        EnsureDirectory(outPath);
+        EnsureDirectory(baseOutPath);
 
         await File.WriteAllTextAsync(outPath, json, ct);
+        await File.WriteAllTextAsync(baseOutPath, json, ct);
 
         Console.WriteLine($"Snapshot generado: {outPath}");
+        Console.WriteLine($"Snapshot base generado: {baseOutPath}");
+
         return 0;
+    }
+
+    private static void EnsureDirectory(string path)
+    {
+        var dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrWhiteSpace(dir))
+            Directory.CreateDirectory(dir);
     }
 }

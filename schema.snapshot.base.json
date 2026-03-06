@@ -1,0 +1,39 @@
+{
+  "Provider": "SqlServer",
+  "Tables": [
+    {
+      "Schema": "dbo",
+      "Name": "Users",
+      "Columns": [
+        {
+          "ColumnId": 1,
+          "Name": "Name",
+          "Type": {
+            "StoreType": "varchar",
+            "Length": 50,
+            "Precision": null,
+            "Scale": null
+          },
+          "IsNullable": true,
+          "IsIdentity": false,
+          "DefaultSql": null
+        },
+        {
+          "ColumnId": 2,
+          "Name": "Age",
+          "Type": {
+            "StoreType": "int",
+            "Length": null,
+            "Precision": null,
+            "Scale": null
+          },
+          "IsNullable": true,
+          "IsIdentity": false,
+          "DefaultSql": null
+        }
+      ],
+      "PrimaryKey": null
+    }
+  ],
+  "FormatVersion": "1.0"
+}
