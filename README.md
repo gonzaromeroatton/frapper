@@ -411,3 +411,4 @@ Colocar aquí la licencia del proyecto (por ejemplo, **MIT** si decides open-sou
 ---
 
 Archivo actualizado para reflejar mejor el estado real del proyecto, sus fortalezas, sus límites actuales y su dirección técnica.
+ 
