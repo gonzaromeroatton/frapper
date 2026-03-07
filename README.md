@@ -406,7 +406,7 @@ Para más detalle, ver `ROADMAP.md`.
 
 ## Licencia
 
-Colocar aquí la licencia del proyecto (por ejemplo, **MIT** si decides open-sourcearlo).
+MIT License.
 
 ---
 
