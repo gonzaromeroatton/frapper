@@ -1,5 +1,6 @@
 using Frapper.Cli.Configuration;
-using Frapper.Core.Serialization;
+using Frapper.Core.Snapshot;
+using Frapper.SqlServer;
 using Frapper.SqlServer.Introspection;
 
 namespace Frapper.Cli.Commands.Snapshot;
@@ -7,47 +8,65 @@ namespace Frapper.Cli.Commands.Snapshot;
 internal sealed class SnapshotHandler
 {
     private readonly FrapperConfiguration _configuration;
+    private readonly ISchemaSnapshotSerializer _serializer;
 
     public SnapshotHandler(FrapperConfiguration configuration)
     {
-        _configuration = configuration;
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _serializer = new SchemaSnapshotSerializer();
     }
 
     public async Task<int> RunAsync(
-        string? rawConnection,
+        string rawConnection,
         string outPath,
         string baseOutPath,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        var connectionString = _configuration.ResolveConnectionString(rawConnection);
-
-        if (string.IsNullOrWhiteSpace(connectionString))
+        if (string.IsNullOrWhiteSpace(rawConnection))
         {
-            Console.Error.WriteLine("Error: no se pudo resolver --connection.");
-            return 2;
+            Console.Error.WriteLine("Connection is required.");
+            return 1;
         }
 
-        var reader = new SqlServerSchemaReader();
-        var schema = await reader.ReadAsync(connectionString, ct);
+        try
+        {
+            var connectionString = _configuration.RequireConnectionString(rawConnection);
 
-        var json = SchemaSnapshotSerializer.Serialize(schema);
+            var reader = new SqlServerSchemaReader();
+            var schema = await reader.ReadAsync(connectionString, cancellationToken);
 
-        EnsureDirectory(outPath);
-        EnsureDirectory(baseOutPath);
+            var json = _serializer.Serialize(schema);
 
-        await File.WriteAllTextAsync(outPath, json, ct);
-        await File.WriteAllTextAsync(baseOutPath, json, ct);
+            EnsureDirectoryExists(outPath);
+            EnsureDirectoryExists(baseOutPath);
 
-        Console.WriteLine($"Snapshot generado: {outPath}");
-        Console.WriteLine($"Snapshot base generado: {baseOutPath}");
+            await File.WriteAllTextAsync(outPath, json, cancellationToken);
+            await File.WriteAllTextAsync(baseOutPath, json, cancellationToken);
 
-        return 0;
+            Console.WriteLine("Snapshot generation completed successfully.");
+            Console.WriteLine($"Provider: {schema.Provider}");
+            Console.WriteLine($"FormatVersion: {schema.FormatVersion}");
+            Console.WriteLine($"Tables: {schema.Tables.Count}");
+            Console.WriteLine($"Snapshot: {Path.GetFullPath(outPath)}");
+            Console.WriteLine($"Base snapshot: {Path.GetFullPath(baseOutPath)}");
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Snapshot generation failed.");
+            Console.Error.WriteLine(ex.Message);
+            return 1;
+        }
     }
 
-    private static void EnsureDirectory(string path)
+    private static void EnsureDirectoryExists(string path)
     {
-        var dir = Path.GetDirectoryName(path);
-        if (!string.IsNullOrWhiteSpace(dir))
-            Directory.CreateDirectory(dir);
+        var directory = Path.GetDirectoryName(path);
+
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
     }
 }

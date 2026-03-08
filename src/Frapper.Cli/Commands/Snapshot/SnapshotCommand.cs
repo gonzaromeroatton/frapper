@@ -38,7 +38,7 @@ internal static class SnapshotCommand
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var rawConnection = parseResult.GetValue(ConnectionOption);
+            var rawConnection = parseResult.GetValue(ConnectionOption) ?? string.Empty;
             var outPath = parseResult.GetValue(OutOption) ?? "schema.snapshot.json";
             var baseOutPath = parseResult.GetValue(BaseOutOption) ?? "schema.snapshot.base.json";
 

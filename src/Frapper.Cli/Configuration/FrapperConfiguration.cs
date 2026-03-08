@@ -35,6 +35,19 @@ internal sealed class FrapperConfiguration
         return null;
     }
 
+    public string RequireConnectionString(string? input)
+    {
+        var resolved = ResolveConnectionString(input);
+
+        if (string.IsNullOrWhiteSpace(resolved))
+        {
+            throw new InvalidOperationException(
+                $"Could not resolve connection '{input}'. Provide a full connection string, a logical name, or a full configuration key.");
+        }
+
+        return resolved;
+    }
+
     private static bool LooksLikeRawConnectionString(string value)
     {
         return value.Contains('=') && value.Contains(';');
