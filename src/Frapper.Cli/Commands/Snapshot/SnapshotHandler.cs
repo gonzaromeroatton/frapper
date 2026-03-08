@@ -1,19 +1,23 @@
 using Frapper.Cli.Configuration;
+using Frapper.Core.Abstractions;
 using Frapper.Core.Snapshot;
-using Frapper.SqlServer;
-using Frapper.SqlServer.Introspection;
 
 namespace Frapper.Cli.Commands.Snapshot;
 
 internal sealed class SnapshotHandler
 {
     private readonly FrapperConfiguration _configuration;
+    private readonly IDatabaseSchemaReader _schemaReader;
     private readonly ISchemaSnapshotSerializer _serializer;
 
-    public SnapshotHandler(FrapperConfiguration configuration)
+    public SnapshotHandler(
+        FrapperConfiguration configuration,
+        IDatabaseSchemaReader schemaReader,
+        ISchemaSnapshotSerializer serializer)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _serializer = new SchemaSnapshotSerializer();
+        _schemaReader = schemaReader ?? throw new ArgumentNullException(nameof(schemaReader));
+        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
 
     public async Task<int> RunAsync(
@@ -31,10 +35,7 @@ internal sealed class SnapshotHandler
         try
         {
             var connectionString = _configuration.RequireConnectionString(rawConnection);
-
-            var reader = new SqlServerSchemaReader();
-            var schema = await reader.ReadAsync(connectionString, cancellationToken);
-
+            var schema = await _schemaReader.ReadAsync(connectionString, cancellationToken);
             var json = _serializer.Serialize(schema);
 
             EnsureDirectoryExists(outPath);

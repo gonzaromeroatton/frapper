@@ -1,5 +1,8 @@
 using System.CommandLine;
 using Frapper.Cli.Configuration;
+using Frapper.Core.Snapshot;
+using Frapper.SqlServer;
+using Frapper.SqlServer.Introspection;
 
 namespace Frapper.Cli.Commands.Snapshot;
 
@@ -42,7 +45,10 @@ internal static class SnapshotCommand
             var outPath = parseResult.GetValue(OutOption) ?? "schema.snapshot.json";
             var baseOutPath = parseResult.GetValue(BaseOutOption) ?? "schema.snapshot.base.json";
 
-            var handler = new SnapshotHandler(configuration);
+            var handler = new SnapshotHandler(
+                configuration,
+                new SqlServerSchemaReader(),
+                new SchemaSnapshotSerializer());
 
             return await handler.RunAsync(rawConnection, outPath, baseOutPath, cancellationToken);
         });
