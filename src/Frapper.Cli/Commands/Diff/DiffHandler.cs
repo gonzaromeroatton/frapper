@@ -1,22 +1,33 @@
+using Frapper.Cli.Configuration;
+using Frapper.Core.Abstractions;
 using Frapper.Core.Domain.Diff;
+using Frapper.Core.Domain.Schema;
 using Frapper.Core.Snapshot;
 
 namespace Frapper.Cli.Commands.Diff;
 
 internal sealed class DiffHandler
 {
+    private readonly FrapperConfiguration _configuration;
+    private readonly IDatabaseSchemaReader _schemaReader;
     private readonly ISchemaSnapshotSerializer _serializer;
     private readonly ISchemaDiffer _differ;
 
-    public DiffHandler()
+    public DiffHandler(
+        FrapperConfiguration configuration,
+        IDatabaseSchemaReader schemaReader,
+        ISchemaSnapshotSerializer serializer)
     {
-        _serializer = new SchemaSnapshotSerializer();
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _schemaReader = schemaReader ?? throw new ArgumentNullException(nameof(schemaReader));
+        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _differ = new SchemaDiffer();
     }
 
     public async Task<int> RunAsync(
         string basePath,
-        string targetPath,
+        string? targetPath,
+        string? rawConnection,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(basePath))
@@ -25,10 +36,13 @@ internal sealed class DiffHandler
             return 1;
         }
 
-        if (string.IsNullOrWhiteSpace(targetPath))
+        var hasTarget = !string.IsNullOrWhiteSpace(targetPath);
+        var hasConnection = !string.IsNullOrWhiteSpace(rawConnection);
+
+        if (hasTarget == hasConnection)
         {
-            Console.Error.WriteLine("Target snapshot path is required.");
-            return 1;
+            Console.Error.WriteLine("Debe especificarse exactamente uno de estos parámetros: --target o --connection.");
+            return 2;
         }
 
         try
@@ -39,22 +53,34 @@ internal sealed class DiffHandler
                 return 1;
             }
 
-            if (!File.Exists(targetPath))
-            {
-                Console.Error.WriteLine($"Target snapshot file not found: {targetPath}");
-                return 1;
-            }
-
             var baseJson = await File.ReadAllTextAsync(basePath, cancellationToken);
-            var targetJson = await File.ReadAllTextAsync(targetPath, cancellationToken);
-
             var baseSchema = _serializer.Deserialize(baseJson);
-            var targetSchema = _serializer.Deserialize(targetJson);
+
+            DatabaseSchema targetSchema;
+
+            if (hasTarget)
+            {
+                if (!File.Exists(targetPath!))
+                {
+                    Console.Error.WriteLine($"Target snapshot file not found: {targetPath}");
+                    return 1;
+                }
+
+                var targetJson = await File.ReadAllTextAsync(targetPath!, cancellationToken);
+                targetSchema = _serializer.Deserialize(targetJson);
+            }
+            else
+            {
+                var connectionString = _configuration.RequireConnectionString(rawConnection);
+                targetSchema = await _schemaReader.ReadAsync(connectionString, cancellationToken);
+            }
 
             var plan = _differ.Diff(
                 baseSchema,
                 targetSchema,
-                new DiffOptions(AllowDestructiveChanges: true));
+                new DiffOptions(
+                    AllowDestructiveChanges: true,
+                    StrictTypeMatching: true));
 
             var summary = DiffSummaryMapper.FromPlan(plan);
 

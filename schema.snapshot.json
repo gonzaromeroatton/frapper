@@ -18,8 +18,19 @@
           "defaultSql": null
         },
         {
-          "columnId": 2,
+          "columnId": 5,
           "name": "Description",
+          "storeType": "varchar",
+          "isNullable": true,
+          "isIdentity": false,
+          "length": 100,
+          "precision": null,
+          "scale": null,
+          "defaultSql": null
+        },
+        {
+          "columnId": 6,
+          "name": "Address",
           "storeType": "varchar",
           "isNullable": true,
           "isIdentity": false,

@@ -23,12 +23,18 @@ internal sealed class SnapshotHandler
     public async Task<int> RunAsync(
         string rawConnection,
         string outPath,
-        string baseOutPath,
+        string? baseOutPath,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(rawConnection))
         {
             Console.Error.WriteLine("Connection is required.");
+            return 1;
+        }
+
+        if (string.IsNullOrWhiteSpace(outPath))
+        {
+            Console.Error.WriteLine("Output snapshot path is required.");
             return 1;
         }
 
@@ -39,17 +45,24 @@ internal sealed class SnapshotHandler
             var json = _serializer.Serialize(schema);
 
             EnsureDirectoryExists(outPath);
-            EnsureDirectoryExists(baseOutPath);
-
             await File.WriteAllTextAsync(outPath, json, cancellationToken);
-            await File.WriteAllTextAsync(baseOutPath, json, cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(baseOutPath))
+            {
+                EnsureDirectoryExists(baseOutPath);
+                await File.WriteAllTextAsync(baseOutPath, json, cancellationToken);
+            }
 
             Console.WriteLine("Snapshot generation completed successfully.");
             Console.WriteLine($"Provider: {schema.Provider}");
             Console.WriteLine($"FormatVersion: {schema.FormatVersion}");
             Console.WriteLine($"Tables: {schema.Tables.Count}");
             Console.WriteLine($"Snapshot: {Path.GetFullPath(outPath)}");
-            Console.WriteLine($"Base snapshot: {Path.GetFullPath(baseOutPath)}");
+
+            if (!string.IsNullOrWhiteSpace(baseOutPath))
+            {
+                Console.WriteLine($"Base snapshot: {Path.GetFullPath(baseOutPath)}");
+            }
 
             return 0;
         }

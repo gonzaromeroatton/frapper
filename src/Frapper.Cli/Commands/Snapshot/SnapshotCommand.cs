@@ -8,32 +8,29 @@ namespace Frapper.Cli.Commands.Snapshot;
 
 internal static class SnapshotCommand
 {
-    internal static readonly Option<string> ConnectionOption =
+    internal static readonly Option<string?> ConnectionOption =
         new("--connection")
         {
-            Required = true,
             Description = "Connection string real, nombre lógico (ej: Default) o clave completa (ej: ConnectionStrings:Default)."
         };
 
-    internal static readonly Option<string> OutOption =
+    internal static readonly Option<string?> OutOption =
         new("--out")
         {
-            Description = "Ruta del snapshot deseado.",
-            DefaultValueFactory = _ => "schema.snapshot.json"
+            Description = "Ruta del snapshot deseado."
         };
 
-    internal static readonly Option<string> BaseOutOption =
+    internal static readonly Option<string?> BaseOutOption =
         new("--base-out")
         {
-            Description = "Ruta del snapshot base.",
-            DefaultValueFactory = _ => "schema.snapshot.base.json"
+            Description = "Ruta del snapshot base. Si no se especifica, no se sobrescribe el base snapshot."
         };
 
     public static Command Build(FrapperConfiguration configuration)
     {
         var command = new Command(
             name: "snapshot",
-            description: "Genera snapshots iniciales a partir del esquema actual de SQL Server.");
+            description: "Genera snapshots a partir del esquema actual de SQL Server.");
 
         command.Add(ConnectionOption);
         command.Add(OutOption);
@@ -41,16 +38,22 @@ internal static class SnapshotCommand
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var rawConnection = parseResult.GetValue(ConnectionOption) ?? string.Empty;
-            var outPath = parseResult.GetValue(OutOption) ?? "schema.snapshot.json";
-            var baseOutPath = parseResult.GetValue(BaseOutOption) ?? "schema.snapshot.base.json";
+            var projectFile = new FrapperProjectFileLoader().LoadOrThrow();
+
+            var rawConnection = parseResult.GetValue(ConnectionOption) ?? projectFile.Connection;
+            var outPath = parseResult.GetValue(OutOption) ?? projectFile.Snapshot;
+            var baseOutPath = parseResult.GetValue(BaseOutOption);
 
             var handler = new SnapshotHandler(
                 configuration,
                 new SqlServerSchemaReader(),
                 new SchemaSnapshotSerializer());
 
-            return await handler.RunAsync(rawConnection, outPath, baseOutPath, cancellationToken);
+            return await handler.RunAsync(
+                rawConnection,
+                outPath,
+                baseOutPath,
+                cancellationToken);
         });
 
         return command;
