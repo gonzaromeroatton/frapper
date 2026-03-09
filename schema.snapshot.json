@@ -1,39 +1,24 @@
 {
-  "Provider": "SqlServer",
-  "Tables": [
+  "formatVersion": "1.0",
+  "databaseEngine": "SqlServer",
+  "tables": [
     {
-      "Schema": "dbo",
-      "Name": "Users",
-      "Columns": [
+      "schema": "dbo",
+      "name": "Users",
+      "columns": [
         {
-          "ColumnId": 1,
-          "Name": "Name",
-          "Type": {
-            "StoreType": "varchar",
-            "Length": 50,
-            "Precision": null,
-            "Scale": null
-          },
-          "IsNullable": true,
-          "IsIdentity": false,
-          "DefaultSql": null
-        },
-        {
-          "ColumnId": 2,
-          "Name": "Age",
-          "Type": {
-            "StoreType": "int",
-            "Length": 10,
-            "Precision": null,
-            "Scale": null
-          },
-          "IsNullable": true,
-          "IsIdentity": false,
-          "DefaultSql": null
+          "columnId": 1,
+          "name": "Name",
+          "storeType": "varchar",
+          "isNullable": true,
+          "isIdentity": false,
+          "length": 50,
+          "precision": null,
+          "scale": null,
+          "defaultSql": null
         }
       ],
-      "PrimaryKey": null
+      "primaryKey": null
     }
-  ],
-  "FormatVersion": "1.0"
+  ]
 }

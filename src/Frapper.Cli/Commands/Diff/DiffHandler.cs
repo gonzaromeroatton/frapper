@@ -1,4 +1,4 @@
-using Frapper.Core.Domain.Schema;
+using Frapper.Core.Domain.Diff;
 using Frapper.Core.Snapshot;
 
 namespace Frapper.Cli.Commands.Diff;
@@ -6,10 +6,12 @@ namespace Frapper.Cli.Commands.Diff;
 internal sealed class DiffHandler
 {
     private readonly ISchemaSnapshotSerializer _serializer;
+    private readonly ISchemaDiffer _differ;
 
     public DiffHandler()
     {
         _serializer = new SchemaSnapshotSerializer();
+        _differ = new SchemaDiffer();
     }
 
     public async Task<int> RunAsync(
@@ -49,9 +51,14 @@ internal sealed class DiffHandler
             var baseSchema = _serializer.Deserialize(baseJson);
             var targetSchema = _serializer.Deserialize(targetJson);
 
-            var diffResult = ComputeDiff(baseSchema, targetSchema);
+            var plan = _differ.Diff(
+                baseSchema,
+                targetSchema,
+                new DiffOptions(AllowDestructiveChanges: true));
 
-            PrintSummary(diffResult);
+            var summary = DiffSummaryMapper.FromPlan(plan);
+
+            PrintSummary(summary);
 
             return 0;
         }
@@ -63,22 +70,14 @@ internal sealed class DiffHandler
         }
     }
 
-    private static object ComputeDiff(DatabaseSchema baseSchema, DatabaseSchema targetSchema)
+    private static void PrintSummary(DiffSummary summary)
     {
-        // TODO:
-        // Reemplazar esto por tu SchemaDiffEngine real.
-        // Ejemplo esperado:
-        // return SchemaDiffEngine.Compare(baseSchema, targetSchema);
-
-        throw new NotImplementedException(
-            "Connect DiffHandler to the real schema diff engine.");
-    }
-
-    private static void PrintSummary(object diffResult)
-    {
-        // TODO:
-        // Reemplazar por impresión real del resultado del diff.
         Console.WriteLine("Diff completed successfully.");
-        Console.WriteLine("Connect PrintSummary() to the real diff result type.");
+        Console.WriteLine($"Created tables: {summary.CreatedTables}");
+        Console.WriteLine($"Dropped tables: {summary.DroppedTables}");
+        Console.WriteLine($"Added columns: {summary.AddedColumns}");
+        Console.WriteLine($"Dropped columns: {summary.DroppedColumns}");
+        Console.WriteLine($"Altered columns: {summary.AlteredColumns}");
+        Console.WriteLine($"Total operations: {summary.TotalOperations}");
     }
 }

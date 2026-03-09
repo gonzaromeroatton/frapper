@@ -19,6 +19,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>frapper</ToolCommandName>
+    <PackageId>Frapper.Cli</PackageId>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Authors>Gonzalo Romero Atton</Authors>
+    <Description>Schema migrations for Dapper-based .NET systems.</Description>
     <UserSecretsId>952fd376-7ac5-417f-9fef-9aeafe22ae77</UserSecretsId>
   </PropertyGroup>
 
