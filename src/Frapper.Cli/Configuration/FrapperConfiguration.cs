@@ -18,16 +18,13 @@ internal sealed class FrapperConfiguration
 
         input = input.Trim();
 
-        // Caso 1: parece un connection string completo
         if (LooksLikeRawConnectionString(input))
             return input;
 
-        // Caso 2: nombre lógico, por ejemplo "Default"
         var fromNamedConnection = _configuration.GetConnectionString(input);
         if (!string.IsNullOrWhiteSpace(fromNamedConnection))
             return fromNamedConnection;
 
-        // Caso 3: clave completa, por ejemplo "ConnectionStrings:Default"
         var fromKey = _configuration[input];
         if (!string.IsNullOrWhiteSpace(fromKey))
             return fromKey;

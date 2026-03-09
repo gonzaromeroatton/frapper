@@ -1,6 +1,7 @@
 using Frapper.Cli.Configuration;
 using Frapper.Core.Abstractions;
 using Frapper.Core.Domain.Diff;
+using Frapper.Core.Domain.Plan;
 using Frapper.Core.Domain.Schema;
 using Frapper.Core.Snapshot;
 
@@ -56,7 +57,7 @@ internal sealed class DiffHandler
             var baseJson = await File.ReadAllTextAsync(basePath, cancellationToken);
             var baseSchema = _serializer.Deserialize(baseJson);
 
-            DatabaseSchema targetSchema;
+            MigrationPlan plan;
 
             if (hasTarget)
             {
@@ -67,20 +68,29 @@ internal sealed class DiffHandler
                 }
 
                 var targetJson = await File.ReadAllTextAsync(targetPath!, cancellationToken);
-                targetSchema = _serializer.Deserialize(targetJson);
+                var targetSchema = _serializer.Deserialize(targetJson);
+
+                // snapshot base -> snapshot target
+                plan = _differ.Diff(
+                    baseSchema,
+                    targetSchema,
+                    new DiffOptions(
+                        AllowDestructiveChanges: true,
+                        StrictTypeMatching: true));
             }
             else
             {
                 var connectionString = _configuration.RequireConnectionString(rawConnection);
-                targetSchema = await _schemaReader.ReadAsync(connectionString, cancellationToken);
-            }
+                var liveDatabaseSchema = await _schemaReader.ReadAsync(connectionString, cancellationToken);
 
-            var plan = _differ.Diff(
-                baseSchema,
-                targetSchema,
-                new DiffOptions(
-                    AllowDestructiveChanges: true,
-                    StrictTypeMatching: true));
+                // DB real -> snapshot base
+                plan = _differ.Diff(
+                    liveDatabaseSchema,
+                    baseSchema,
+                    new DiffOptions(
+                        AllowDestructiveChanges: true,
+                        StrictTypeMatching: true));
+            }
 
             var summary = DiffSummaryMapper.FromPlan(plan);
 
