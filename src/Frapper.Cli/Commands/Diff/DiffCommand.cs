@@ -5,17 +5,15 @@ namespace Frapper.Cli.Commands.Diff;
 
 internal static class DiffCommand
 {
-    internal static readonly Option<string> BaseOption =
+    internal static readonly Option<string?> BaseOption =
         new("--base")
         {
-            Required = true,
             Description = "Ruta del snapshot base."
         };
 
-    internal static readonly Option<string> TargetOption =
+    internal static readonly Option<string?> TargetOption =
         new("--target")
         {
-            Required = true,
             Description = "Ruta del snapshot objetivo."
         };
 
@@ -30,8 +28,10 @@ internal static class DiffCommand
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var basePath = parseResult.GetValue(BaseOption) ?? string.Empty;
-            var targetPath = parseResult.GetValue(TargetOption) ?? string.Empty;
+            var projectFile = new FrapperProjectFileLoader().LoadOrThrow();
+
+            var basePath = parseResult.GetValue(BaseOption) ?? projectFile.BaseSnapshot;
+            var targetPath = parseResult.GetValue(TargetOption) ?? projectFile.Snapshot;
 
             var handler = new DiffHandler();
 

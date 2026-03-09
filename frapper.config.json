@@ -1,6 +1,7 @@
 {
   "Provider": "SqlServer",
-  "Connection": "Default",
+  "Connection": "default",
   "MigrationsPath": "migrations",
-  "BaseSnapshot": "schema.snapshot.base.json"
+  "BaseSnapshot": "schema.snapshot.base.json",
+  "Snapshot": "schema.snapshot.json"
 }

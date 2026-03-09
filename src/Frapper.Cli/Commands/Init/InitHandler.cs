@@ -23,6 +23,7 @@ internal sealed class InitHandler
         string rawConnection,
         string migrationsPath,
         string baseSnapshotPath,
+        string snapshotPath,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(rawConnection))
@@ -43,6 +44,12 @@ internal sealed class InitHandler
             return 2;
         }
 
+        if (string.IsNullOrWhiteSpace(snapshotPath))
+        {
+            Console.Error.WriteLine("Error: --snapshot es requerido.");
+            return 2;
+        }
+
         try
         {
             if (File.Exists(ConfigFileName))
@@ -51,7 +58,6 @@ internal sealed class InitHandler
                 return 2;
             }
 
-            // Valida que la conexión pueda resolverse antes de crear nada.
             _configuration.RequireConnectionString(rawConnection);
 
             Directory.CreateDirectory(migrationsPath);
@@ -60,17 +66,18 @@ internal sealed class InitHandler
                 rawConnection,
                 migrationsPath,
                 baseSnapshotPath,
+                snapshotPath,
                 cancellationToken);
 
             var snapshotResult = await _snapshotHandler.RunAsync(
                 rawConnection,
-                baseSnapshotPath,
+                snapshotPath,
                 baseSnapshotPath,
                 cancellationToken);
 
             if (snapshotResult != 0)
             {
-                Console.Error.WriteLine("Error: no fue posible generar el snapshot base durante la inicialización.");
+                Console.Error.WriteLine("Error: no fue posible generar los snapshots iniciales.");
                 return snapshotResult;
             }
 
@@ -79,6 +86,7 @@ internal sealed class InitHandler
             Console.WriteLine("Proyecto Frapper inicializado correctamente.");
             Console.WriteLine($"Config: {Path.GetFullPath(ConfigFileName)}");
             Console.WriteLine($"Base snapshot: {Path.GetFullPath(baseSnapshotPath)}");
+            Console.WriteLine($"Desired snapshot: {Path.GetFullPath(snapshotPath)}");
             Console.WriteLine($"Migrations: {Path.GetFullPath(migrationsPath)}");
 
             return 0;
@@ -95,6 +103,7 @@ internal sealed class InitHandler
         string rawConnection,
         string migrationsPath,
         string baseSnapshotPath,
+        string snapshotPath,
         CancellationToken cancellationToken)
     {
         var config = new FrapperProjectConfig
@@ -102,7 +111,8 @@ internal sealed class InitHandler
             Provider = "SqlServer",
             Connection = rawConnection,
             MigrationsPath = migrationsPath,
-            BaseSnapshot = baseSnapshotPath
+            BaseSnapshot = baseSnapshotPath,
+            Snapshot = snapshotPath
         };
 
         var json = JsonSerializer.Serialize(config, new JsonSerializerOptions
@@ -120,9 +130,7 @@ internal sealed class InitHandler
         var readmePath = Path.Combine(migrationsPath, "README.md");
 
         if (File.Exists(readmePath))
-        {
             return;
-        }
 
         var content =
             "# Migrations\r\n\r\n" +
@@ -137,5 +145,6 @@ internal sealed class InitHandler
         public string Connection { get; init; } = string.Empty;
         public string MigrationsPath { get; init; } = "migrations";
         public string BaseSnapshot { get; init; } = "schema.snapshot.base.json";
+        public string Snapshot { get; init; } = "schema.snapshot.json";
     }
 }

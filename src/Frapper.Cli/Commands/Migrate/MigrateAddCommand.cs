@@ -6,73 +6,66 @@ namespace Frapper.Cli.Commands.Migrate;
 
 internal static class MigrateAddCommand
 {
-    internal static readonly Argument<string> NameArgument =
+    internal static readonly Argument<string> MigrationNameArgument =
         new("name")
         {
             Description = "Nombre de la migración."
         };
 
-    internal static readonly Option<string> SnapshotOption =
+    internal static readonly Option<string?> SnapshotOption =
         new("--snapshot")
         {
-            Description = "Ruta del snapshot deseado.",
-            DefaultValueFactory = _ => "schema.snapshot.json"
+            Description = "Ruta del snapshot deseado."
         };
 
-    internal static readonly Option<string> BaseSnapshotOption =
+    internal static readonly Option<string?> BaseSnapshotOption =
         new("--base-snapshot")
         {
-            Description = "Ruta del snapshot base.",
-            DefaultValueFactory = _ => "schema.snapshot.base.json"
+            Description = "Ruta del snapshot base."
         };
 
-    internal static readonly Option<string> OutDirOption =
+    internal static readonly Option<string?> OutDirOption =
         new("--out-dir")
         {
-            Description = "Directorio de salida para la migración.",
-            DefaultValueFactory = _ => "Migrations"
+            Description = "Directorio de salida de migraciones."
         };
 
-    internal static readonly Option<bool> AllowDestructiveOption =
-        new("--allow-destructive")
+    internal static readonly Option<bool> AllowDestructiveChangesOption =
+        new("--allow-destructive-changes")
         {
-            Description = "Permite generar operaciones destructivas, como eliminar columnas o tablas."
+            Description = "Permite generar operaciones destructivas."
         };
 
     public static Command Build(FrapperConfiguration configuration)
     {
         var command = new Command(
             name: "add",
-            description: "Genera una migración SQL a partir del diff entre snapshot base y snapshot deseado.");
+            description: "Genera una nueva migración SQL a partir del diff entre snapshot base y snapshot deseado.");
 
-        command.Add(NameArgument);
+        command.Arguments.Add(MigrationNameArgument);
         command.Add(SnapshotOption);
         command.Add(BaseSnapshotOption);
         command.Add(OutDirOption);
-        command.Add(AllowDestructiveOption);
+        command.Add(AllowDestructiveChangesOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var name = parseResult.GetValue(NameArgument);
-            var snapshotPath = parseResult.GetValue(SnapshotOption) ?? "schema.snapshot.json";
-            var baseSnapshotPath = parseResult.GetValue(BaseSnapshotOption) ?? "schema.snapshot.base.json";
-            var outDir = parseResult.GetValue(OutDirOption) ?? "Migrations";
-            var allowDestructive = parseResult.GetValue(AllowDestructiveOption);
+            var projectFile = new FrapperProjectFileLoader().LoadOrThrow();
 
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                Console.Error.WriteLine("Error: falta el nombre de la migración.");
-                return 2;
-            }
+            var migrationName = parseResult.GetValue(MigrationNameArgument) ?? string.Empty;
+            var snapshotPath = parseResult.GetValue(SnapshotOption) ?? projectFile.Snapshot;
+            var baseSnapshotPath = parseResult.GetValue(BaseSnapshotOption) ?? projectFile.BaseSnapshot;
+            var outDir = parseResult.GetValue(OutDirOption) ?? projectFile.MigrationsPath;
+            var allowDestructiveChanges = parseResult.GetValue(AllowDestructiveChangesOption);
 
             var handler = new MigrateAddHandler(new SchemaSnapshotSerializer());
 
             return await handler.RunAsync(
-                name,
+                migrationName,
                 snapshotPath,
                 baseSnapshotPath,
                 outDir,
-                allowDestructive,
+                allowDestructiveChanges,
                 cancellationToken);
         });
 

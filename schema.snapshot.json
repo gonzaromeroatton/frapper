@@ -16,9 +16,55 @@
           "precision": null,
           "scale": null,
           "defaultSql": null
+        },
+        {
+          "columnId": 2,
+          "name": "Description",
+          "storeType": "varchar",
+          "isNullable": true,
+          "isIdentity": false,
+          "length": 100,
+          "precision": null,
+          "scale": null,
+          "defaultSql": null
         }
       ],
       "primaryKey": null
+    },
+    {
+      "schema": "dbo",
+      "name": "__FrapperMigrationsHistory",
+      "columns": [
+        {
+          "columnId": 1,
+          "name": "MigrationId",
+          "storeType": "nvarchar",
+          "isNullable": false,
+          "isIdentity": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "defaultSql": null
+        },
+        {
+          "columnId": 2,
+          "name": "AppliedUtc",
+          "storeType": "datetime2",
+          "isNullable": false,
+          "isIdentity": false,
+          "length": null,
+          "precision": 27,
+          "scale": null,
+          "defaultSql": null
+        }
+      ],
+      "primaryKey": {
+        "name": "PK____Frappe__E5D3573B27397DDD",
+        "columns": [
+          "MigrationId"
+        ],
+        "isClustered": true
+      }
     }
   ]
 }

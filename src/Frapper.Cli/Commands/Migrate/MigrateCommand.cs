@@ -9,9 +9,10 @@ internal static class MigrateCommand
     {
         var command = new Command(
             name: "migrate",
-            description: "Comandos relacionados con generación de migraciones.");
+            description: "Comandos de migración.");
 
         command.Add(MigrateAddCommand.Build(configuration));
+        command.Add(MigrateApplyCommand.Build(configuration));
 
         return command;
     }
