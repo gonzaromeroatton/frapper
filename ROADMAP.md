@@ -1,294 +1,344 @@
-# Roadmap
 
-Este roadmap describe una evolución razonable para Frapper desde su estado actual hacia una herramienta de migraciones más completa para equipos .NET que trabajan con Dapper y SQL Server.
+# Frapper Roadmap
 
----
+Este documento describe la dirección de evolución planificada para **Frapper**.
 
-## Guiding principles
+Frapper nació como una herramienta para resolver un problema concreto:
 
-Antes de agregar features, Frapper debería mantener estas prioridades:
+equipos que usan **Dapper** necesitan una forma robusta de **versionar el esquema de base de datos** sin depender de un ORM.
 
-1. **Determinism first**
-2. **Explicit SQL over magic**
-3. **Database-first modeling**
-4. **Safety for destructive changes**
-5. **Good test coverage before broader feature support**
+El proyecto ya cuenta con una base funcional sólida, pero todavía tiene varias áreas donde puede crecer.
+
+Este roadmap describe esa evolución.
 
 ---
 
-## Current baseline
+# Estado actual
 
-Hoy Frapper ya cuenta con:
+Frapper actualmente ya implementa:
 
-- lectura de esquema SQL Server
-- modelo de dominio del esquema
-- normalización de tipos
-- snapshots determinísticos
-- diff estructural básico
-- emisión de SQL de migración
-- warnings para ciertos cambios sensibles
-- tests relevantes
+- introspección de esquema de SQL Server
+- snapshots determinísticos del esquema
+- comparación estructural entre snapshots
+- generación de migraciones SQL
+- aplicación de migraciones con historial
+- detección de drift entre snapshot y base de datos
+- CLI funcional (`init`, `snapshot`, `diff`, `migrate add`, `migrate apply`)
+- suite de tests automatizados
 
----
-
-## Phase 1 — Hardening the current foundation
-
-Objetivo: reforzar lo que ya existe antes de expandir demasiado el alcance.
-
-### Goals
-
-- mejorar cobertura de tests
-- reforzar determinismo del snapshot
-- estabilizar output del emitter
-- revisar naming y contracts internos
-- agregar documentación técnica y ejemplos
-
-### Deliverables
-
-- tests adicionales para edge cases
-- fixtures de esquema más realistas
-- validación más estricta del SQL emitido
-- documentación de invariantes del diff engine
+Esto convierte a Frapper en un **prototipo funcional real**, capaz de manejar migraciones simples en entornos controlados.
 
 ---
 
-## Phase 2 — Better relational modeling
+# Visión
 
-Objetivo: mejorar la representación del esquema relacional real.
+La visión a largo plazo de Frapper es convertirse en una herramienta que permita:
 
-### Priorities
-
-- foreign keys
-- unique constraints
-- default constraints más ricos
-- nullability changes más robustos
-- precision / scale / length changes mejor modelados
-
-### Benefits
-
-Esto permitiría que Frapper describa mejor cambios reales de negocio y reduzca intervención manual.
-
----
-
-## Phase 3 — Index support
-
-Objetivo: agregar soporte de índices.
-
-### Scope
-
-- lectura de índices
-- snapshot de índices
-- diff de índices
-- SQL para create/drop index
-- warnings para cambios costosos
-
-### Why it matters
-
-Muchos cambios de performance en producción pasan por índices.  
-Sin este soporte, el versionado del esquema queda incompleto.
-
----
-
-## Phase 4 — Smarter change detection
-
-Objetivo: evitar que algunos cambios válidos aparezcan como operaciones demasiado primitivas.
-
-### Main target
-
-- rename detection para tablas
-- rename detection para columnas
-
-### Challenge
-
-Detectar rename de forma confiable no es trivial.  
-Hay que evitar falsos positivos que conviertan un drop/create real en un rename incorrecto.
-
-### Suggested approach
-
-- heurísticas conservadoras
-- feature flags
-- warnings cuando exista ambigüedad
-- opción para override manual
-
----
-
-## Phase 5 — Safer migrations
-
-Objetivo: mejorar seguridad operativa.
-
-### Ideas
-
-- warnings para operaciones destructivas
-- clasificación de riesgo de migración
-- detección de posibles data-loss scenarios
-- modo dry-run
-- salida de reportes de impacto
-
-### Example
-
-- drop column → warning alto
-- alter nullability → warning medio/alto
-- default change → warning visible
-- large table operations → warning de performance
-
----
-
-## Phase 6 — Stronger CLI
-
-Objetivo: exponer mejor el motor interno.
-
-### Candidate commands
-
-```bash
-frapper snapshot
-frapper diff
-frapper migrate add <Name>
-frapper migrate script
-frapper validate
-frapper inspect
-```
-
-### Nice additions
-
-- `--output`
-- `--format`
-- `--dry-run`
-- `--verbose`
-- `--fail-on-warning`
-
-### Benefit
-
-Una buena CLI convierte a Frapper desde una buena librería interna en una herramienta usable de verdad.
-
----
-
-## Phase 7 — Snapshot serialization and storage
-
-Objetivo: formalizar almacenamiento y lectura de snapshots.
-
-### Possibilities
-
-- JSON determinístico
-- metadata mínima de versión
-- checksum / hash de consistencia
-- compatibilidad entre versiones del snapshot format
-
-### Why this matters
-
-El snapshot será un artefacto central para Git, CI/CD y auditoría de cambios.
-
----
-
-## Phase 8 — Broader database object support
-
-Objetivo: ampliar cobertura del catálogo.
-
-### Candidates
-
-- views
-- stored procedures
-- functions
-- triggers
-- schemas
-- check constraints
-
-### Trade-off
-
-No todos estos objetos deben entrar al mismo tiempo.  
-Conviene priorizar primero los que agreguen más valor con menor ambigüedad.
-
----
-
-## Phase 9 — Multi-database architecture
-
-Objetivo: preparar Frapper para soportar otros motores a futuro.
-
-### Potential targets
-
-- PostgreSQL
-- MySQL
-
-### Requirements
-
-- abstraer reader por provider
-- abstraer normalización de tipos
-- abstraer emitter por dialecto
-- mantener el core independiente del motor
-
-### Recommendation
-
-No comenzar aquí demasiado pronto.  
-Primero conviene hacer muy bien SQL Server.
-
----
-
-## Phase 10 — Production readiness
-
-Objetivo: acercar Frapper a uso real en pipelines de equipos.
-
-### Desirable capabilities
-
-- output estable en CI
-- exit codes útiles
-- integración con pipelines
-- documentación de operación
-- versión empaquetable/distribuible
-- estrategia clara de compatibilidad
-
----
-
-## Prioritized backlog proposal
-
-### Highest priority
-
-1. hardening + tests
-2. richer constraints
-3. index support
-4. stronger CLI
-5. migration safety warnings
-
-### Medium priority
-
-6. snapshot serialization
-7. rename detection
-8. impact/risk analysis
-
-### Longer-term priority
-
-9. programmable objects
-10. multi-database support
-
----
-
-## Non-goals for now
-
-Para no dispersar el proyecto demasiado pronto, probablemente **no** conviene priorizar todavía:
-
-- diseñador gráfico de migraciones
-- UI web
-- auto-fix “magic mode”
-- rename detection agresivo sin garantías
-- soporte multi-DB antes de estabilizar SQL Server
-
----
-
-## Definition of success
-
-Frapper será realmente convincente cuando pueda ofrecer, de forma confiable:
-
-- snapshots determinísticos
-- diff entendible y auditable
+- migraciones seguras
 - SQL explícito
-- warnings útiles
-- CLI usable
-- buen soporte para los objetos más importantes del esquema SQL Server
+- control database‑first
+- integración natural con Dapper
+
+sin obligar a adoptar un ORM completo.
+
+En términos de posicionamiento, Frapper busca situarse conceptualmente entre:
+
+| Herramienta | Enfoque |
+|---|---|
+| EF Core Migrations | ORM‑first |
+| Flyway | SQL‑first |
+| Liquibase | Declarative‑first |
+| Frapper | Snapshot‑driven + SQL explícito |
 
 ---
 
-## Summary
+# Fase 1 — Base sólida (actual)
 
-La evolución natural del proyecto no es “agregar todo”, sino avanzar en este orden:
+Estado: **implementado o muy cercano**
 
-**hacerlo correcto → hacerlo seguro → hacerlo usable → hacerlo más amplio**
+Características:
 
-Ese orden encaja muy bien con la identidad técnica de Frapper.
+- snapshot generation
+- snapshot diff
+- migration SQL emission
+- migration execution
+- migration history table
+- drift detection
+- CLI funcional
+
+Objetivo de esta fase:
+
+Validar que el modelo **snapshot → diff → migration** funciona correctamente.
+
+---
+
+# Fase 2 — Soporte de más objetos de base de datos
+
+Objetivo: ampliar el modelo de esquema.
+
+Actualmente Frapper soporta principalmente:
+
+- tablas
+- columnas
+- primary keys
+
+Próximos objetos a soportar:
+
+## Índices
+
+- index detection
+- index diff
+- index creation
+- index drop
+
+## Foreign Keys
+
+- FK introspection
+- FK diff
+- FK creation
+- FK removal
+
+## Unique constraints
+
+- detección
+- diff
+- migraciones
+
+---
+
+# Fase 3 — Mejoras del Diff Engine
+
+El motor de diff puede volverse más inteligente.
+
+## Rename detection
+
+Evitar:
+
+DROP COLUMN  
+ADD COLUMN
+
+cuando en realidad hubo:
+
+RENAME COLUMN
+
+Esto requiere heurísticas basadas en:
+
+- tipo
+- posición
+- similitud de nombre
+
+---
+
+## Diff más semántico
+
+Detectar cambios más complejos:
+
+- default constraint changes
+- identity changes
+- nullable transitions
+- length changes
+
+---
+
+# Fase 4 — Mejoras del sistema de migraciones
+
+Actualmente las migraciones son SQL simples.
+
+Posibles mejoras:
+
+## Down migrations más robustas
+
+Hoy las migraciones se centran en el camino forward.
+
+Se puede mejorar:
+
+- generación automática de DOWN
+- rollback controlado
+
+---
+
+## Validaciones de seguridad
+
+Ejemplos:
+
+- bloquear drop column en producción
+- advertir sobre data loss
+- detectar cambios destructivos
+
+---
+
+## Dry‑run mode
+
+Permitir ejecutar:
+
+frapper migrate apply --dry-run
+
+para ver qué ocurriría sin modificar la base.
+
+---
+
+# Fase 5 — Mejoras en la CLI
+
+La CLI actual es funcional pero minimalista.
+
+Posibles mejoras:
+
+## UX de comandos
+
+- mensajes más claros
+- mejores errores
+- progreso visible
+
+---
+
+## Nuevos comandos
+
+Ejemplos posibles:
+
+frapper status  
+frapper history  
+frapper validate
+
+---
+
+## Configuración más flexible
+
+Mejor soporte para:
+
+frapper.config.json
+
+incluyendo:
+
+- múltiples conexiones
+- múltiples entornos
+
+---
+
+# Fase 6 — Modelo híbrido (snapshot + code)
+
+Una posible evolución interesante es generar snapshots desde **modelos C# opcionales**.
+
+Ejemplo conceptual:
+
+Order.cs  
+User.cs
+
+↓
+
+schema.snapshot.json
+
+Esto permitiría un modelo híbrido:
+
+- database‑first
+- pero opcionalmente model‑driven
+
+---
+
+# Fase 7 — Soporte multi‑database
+
+Actualmente Frapper es **SQL Server‑only**.
+
+La arquitectura ya permite expandirse a:
+
+PostgreSQL  
+MySQL  
+SQLite
+
+Esto requeriría:
+
+- nuevos SchemaReader
+- normalización de tipos
+- SQL emitters específicos
+
+---
+
+# Fase 8 — Integración CI/CD
+
+Frapper puede integrarse fácilmente en pipelines.
+
+Ejemplos:
+
+## Validación en CI
+
+frapper diff --connection Production
+
+Detectar drift.
+
+## Migraciones automáticas
+
+frapper migrate apply
+
+durante deploy.
+
+---
+
+# Fase 9 — Observabilidad y auditoría
+
+Mejorar trazabilidad del sistema.
+
+Ejemplos:
+
+- logs estructurados
+- historial enriquecido de migraciones
+- metadata de migraciones
+
+---
+
+# Fase 10 — Ecosistema
+
+A largo plazo Frapper podría incluir:
+
+## Visualización de esquema
+
+Generación de diagramas:
+
+frapper diagram
+
+---
+
+## Exportación de documentación
+
+frapper docs
+
+Generar documentación automática del esquema.
+
+---
+
+# Prioridades inmediatas
+
+Las siguientes mejoras tienen mayor impacto inmediato:
+
+1. soporte para índices
+2. soporte para foreign keys
+3. rename detection
+4. validaciones de migraciones destructivas
+5. mejoras de CLI
+
+---
+
+# Contribuciones
+
+Las contribuciones son bienvenidas.
+
+Especialmente en áreas como:
+
+- diff engine
+- soporte de objetos de base de datos
+- testing
+- experiencia de CLI
+
+---
+
+# Resumen
+
+Frapper ya demuestra que el modelo:
+
+snapshot → diff → migration → apply
+
+es viable para equipos **Dapper‑first**.
+
+El roadmap busca llevar esa base a una herramienta más completa manteniendo tres principios:
+
+- SQL explícito
+- control del esquema
+- simplicidad operativa
