@@ -49,9 +49,16 @@ Thumbs.db
 *.tmp
 *.temp
 
-.migrations/
-./frapper.*.json
-./schema.snapshot.json.
-.schema.snapshot.base.json
+# Ignorar carpetas de migraciones (variantes de mayúsculas/minúsculas y con/ sin punto)
+**/migrations/
+**/Migrations/
+**/.migrations/
+**/.Migrations/
 
-# Nota: si deseas incluir la carpeta .vscode con settings compartidos, elimina la línea ".vscode/" de este archivo.
+# Ignorar snapshots y archivos JSON generados en la raíz del repo
+/frapper.*.json
+/schema.snapshot.json
+/schema.snapshot.base.json
+/schema.snapshot*.json
+
+# Nota: si esos archivos ya están siendo rastreados por Git, añadirlos al .gitignore no los eliminará del índice. Para evitar que vuelvan a subirse debes eliminarlos del índice con git rm --cached (ejecutarlo en tu shell).
