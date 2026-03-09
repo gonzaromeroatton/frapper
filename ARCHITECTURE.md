@@ -1,276 +1,443 @@
-# Architecture
 
-## Overview
+# Frapper Architecture
 
-Frapper está organizado como un conjunto de módulos enfocados en una responsabilidad específica: leer el esquema real de SQL Server, modelarlo en memoria, compararlo contra un snapshot anterior y emitir SQL de migración revisable.
+Este documento describe la arquitectura interna completa de **Frapper**, sus componentes, responsabilidades y cómo interactúan entre sí.
 
-La arquitectura busca ser:
+Frapper está diseñado como un sistema modular para permitir:
 
-- **modular**
-- **determinística**
-- **Dapper-friendly**
-- **database-first**
-- **fácil de testear**
-
----
-
-## High-level components
-
-| Component | Responsibility |
-|---|---|
-| `Frapper.Cli` | Punto de entrada, orquestación de comandos y flujos |
-| `Frapper.Core` | Modelo de dominio del esquema y motor de diff |
-| `Frapper.SqlServer` | Lectura de catálogo SQL Server y normalización |
-| `Frapper.EFMigrationEmitter` | Emisión de migraciones SQL / artefactos de salida |
-| `tests/*` | Validación de comportamiento crítico |
+- introspección de esquemas de base de datos
+- snapshots determinísticos
+- comparación estructural de esquemas
+- generación de migraciones SQL
+- aplicación controlada de migraciones
 
 ---
 
-## Architectural principle
+# Principios de diseño
 
-> The database schema is the source of truth.
+Frapper se basa en varios principios fundamentales.
 
-Frapper no trata las clases C# ni un modelo ORM como representación oficial del esquema.  
-El estado real del catálogo de SQL Server es el origen del snapshot y del diff.
+## 1. Database‑first
+
+El esquema real de la base de datos es una fuente importante de verdad.
+
+Frapper puede:
+
+- introspectar el esquema real
+- generar snapshots
+- detectar drift entre snapshots y base de datos
+
+## 2. Snapshot‑driven
+
+La evolución del esquema se basa en snapshots versionados.
+
+Esto permite:
+
+- reproducibilidad
+- control en Git
+- revisión de cambios
+- auditoría de evolución del esquema
+
+## 3. SQL explícito
+
+Frapper evita generar abstracciones opacas.
+
+Las migraciones son:
+
+- SQL claro
+- revisable
+- ejecutable manualmente si se desea
+
+## 4. Arquitectura modular
+
+Cada componente del sistema tiene una responsabilidad clara.
+
+Esto facilita:
+
+- testing
+- extensión
+- soporte futuro para otros motores de base de datos
 
 ---
 
-## Main flow
+# Arquitectura de alto nivel
 
 ```mermaid
 flowchart LR
-    CLI[CLI]
-    DB[(SQL Server)]
-    Reader[SqlServerSchemaReader]
-    Core[Schema Domain + Diff Engine]
-    Emitter[Migration Emitter]
 
-    CLI --> Reader
-    Reader --> DB
-    Reader --> Core
-    CLI --> Core
-    Core --> Emitter
-    Emitter --> CLI
+CLI[Frapper CLI]
+
+Core[Frapper.Core]
+
+SqlServer[Frapper.SqlServer]
+
+Emitter[Frapper.EFMigrationEmitter]
+
+DB[(SQL Server)]
+
+Files[(Snapshots / Migrations)]
+
+CLI --> Core
+CLI --> SqlServer
+Core --> Emitter
+
+SqlServer --> DB
+CLI --> Files
+Emitter --> Files
 ```
 
 ---
 
-## Internal flow
+# Módulos del sistema
 
-1. La CLI dispara una lectura del esquema.
-2. `Frapper.SqlServer` consulta el catálogo.
-3. El resultado se transforma a objetos del dominio en `Frapper.Core`.
-4. El snapshot actual se compara con el snapshot anterior.
-5. El diff genera operaciones estructurales.
-6. El emisor traduce esas operaciones a SQL y warnings.
+## Frapper.Cli
 
----
+Responsable de:
 
-## Domain model
+- interfaz de línea de comandos
+- orquestación de flujos
+- lectura de configuración
+- invocación de servicios del dominio
 
-El corazón del sistema está en `Frapper.Core`.
+Comandos principales:
 
-### Main entities
+```
+init
+snapshot
+diff
+migrate add
+migrate apply
+```
 
-- `DatabaseSchema`
-- `DbTable`
-- `DbColumn`
-- `DbPrimaryKey`
-- tipos auxiliares y metadata normalizada
+Handlers principales:
 
-### Why this matters
-
-Este modelo desacopla la lectura del catálogo de la generación de migraciones.  
-Así, el sistema puede evolucionar el reader, el diff engine y el emitter de manera independiente.
-
----
-
-## Schema reading
-
-`Frapper.SqlServer` se encarga de:
-
-- consultar tablas
-- consultar columnas
-- consultar primary keys
-- leer metadata relevante del catálogo
-- normalizar tipos SQL a una representación estable
-
-### Design goal
-
-El reader no debería “inventar” semántica que no exista en la base.  
-Su trabajo es producir una representación fiel y consistente del esquema.
+```
+InitHandler
+SnapshotHandler
+DiffHandler
+MigrateAddHandler
+MigrateApplyHandler
+```
 
 ---
 
-## Snapshot strategy
+## Frapper.Core
 
-Un snapshot útil en Frapper debe ser **determinístico**.
+Contiene el **dominio del sistema**.
 
-Eso implica:
+Responsable de:
 
-- mismo orden para tablas y columnas
-- tipos normalizados
-- representación estable
-- exclusión de ruido irrelevante
+- modelar esquemas de base de datos
+- representar operaciones de migración
+- generar planes de migración
 
-### Why determinism is critical
+Clases principales:
 
-Sin determinismo:
+```
+DatabaseSchema
+DbTable
+DbColumn
+DbPrimaryKey
+SqlType
+```
 
-- Git diffs se ensucian
-- tests se vuelven frágiles
-- cambios idénticos pueden parecer diferentes
-- el motor de diff pierde confiabilidad
+Interfaces importantes:
+
+```
+IDatabaseSchemaReader
+ISchemaSnapshotSerializer
+ISchemaDiffer
+```
 
 ---
 
-## Diff engine
+## Diff Engine
 
-El diff engine compara dos instancias de `DatabaseSchema`.
+El motor de diff es uno de los componentes centrales del sistema.
 
-### Typical operations
+Clase principal:
 
-- add table
-- drop table
-- add column
-- drop column
-- alter column
-- primary key changes
-- warnings por cambios sensibles
+```
+SchemaDiffer
+```
 
-### Internal pipeline
+Responsabilidades:
+
+- comparar dos esquemas
+- detectar cambios estructurales
+- construir un `MigrationPlan`
+
+---
+
+## MigrationPlan
+
+Representa el conjunto de operaciones necesarias para transformar un esquema en otro.
+
+Incluye:
+
+```
+Up operations
+Down operations
+```
+
+Operaciones soportadas actualmente:
+
+```
+CreateTableOp
+DropTableOp
+AddColumnOp
+DropColumnOp
+AlterColumnOp
+```
+
+---
+
+## Frapper.SqlServer
+
+Este módulo implementa el soporte para SQL Server.
+
+Responsabilidades:
+
+- introspección del catálogo
+- lectura de metadata
+- normalización de tipos
+- ejecución de migraciones
+
+Clases principales:
+
+```
+SqlServerSchemaReader
+SqlServerTypeNormalizer
+SqlServerMigrationRunner
+```
+
+---
+
+## Frapper.EFMigrationEmitter
+
+Responsable de traducir un `MigrationPlan` a SQL.
+
+Clase principal:
+
+```
+SqlMigrationEmitter
+```
+
+Convierte operaciones del dominio en SQL.
+
+Ejemplo:
+
+```
+AddColumnOp → ALTER TABLE ADD COLUMN
+```
+
+También agrega warnings cuando detecta cambios potencialmente peligrosos.
+
+---
+
+# Flujo interno de generación de migraciones
+
+```mermaid
+sequenceDiagram
+
+participant Dev
+participant CLI
+participant Snapshots
+participant Diff
+participant SQL
+participant DB
+
+Dev->>CLI: migrate add
+CLI->>Snapshots: leer base snapshot
+CLI->>Snapshots: leer desired snapshot
+
+CLI->>Diff: SchemaDiffer
+
+Diff-->>CLI: MigrationPlan
+
+CLI->>SQL: SqlMigrationEmitter
+
+SQL-->>CLI: SQL migration
+
+CLI->>Snapshots: actualizar base snapshot
+```
+
+---
+
+# Flujo de aplicación de migraciones
+
+```mermaid
+sequenceDiagram
+
+participant CLI
+participant Runner
+participant DB
+
+CLI->>Runner: migrate apply
+Runner->>DB: leer historial
+Runner->>DB: ejecutar scripts pendientes
+Runner->>DB: registrar migración
+```
+
+---
+
+# Modelo de snapshots
+
+Frapper trabaja con dos snapshots principales.
+
+```
+schema.snapshot.base.json
+schema.snapshot.json
+```
+
+## Base snapshot
+
+Representa el estado aprobado del esquema.
+
+Se actualiza cuando se genera una migración:
+
+```
+migrate add
+```
+
+## Desired snapshot
+
+Representa el estado deseado del esquema.
+
+Puede modificarse:
+
+- manualmente
+- mediante generación desde la base de datos
+
+## Base de datos real
+
+La DB real puede compararse contra el snapshot base para detectar drift.
 
 ```mermaid
 flowchart TD
-    Old[Old Snapshot]
-    New[New Snapshot]
-    MatchTables[Table Matching]
-    MatchColumns[Column Matching]
-    Compare[Compare metadata]
-    Ops[Build operations]
-    Warnings[Detect warnings]
 
-    Old --> MatchTables
-    New --> MatchTables
-    MatchTables --> MatchColumns
-    MatchColumns --> Compare
-    Compare --> Ops
-    Ops --> Warnings
+Base[Base Snapshot]
+Desired[Desired Snapshot]
+DB[(SQL Server)]
+
+Desired --> Diff
+Base --> Diff
+
+Diff --> MigrationPlan
+MigrationPlan --> SQL
+
+SQL --> DB
 ```
 
-### Current limitation
+---
 
-Hoy el diff es fuerte en cambios estructurales básicos, pero todavía no cubre de forma completa escenarios como:
+# Snapshot serialization
 
-- rename detection
-- full foreign key modeling
-- advanced constraints
+Los snapshots se serializan como JSON determinístico.
+
+Responsable:
+
+```
+SchemaSnapshotSerializer
+```
+
+Objetivos:
+
+- reproducibilidad
+- diffs limpios en Git
+- facilidad de inspección manual
+
+---
+
+# Manejo de migraciones
+
+Las migraciones se almacenan como archivos SQL:
+
+```
+migrations/
+```
+
+Ejemplo:
+
+```
+20260309143000_AddCreatedAtToOrders.sql
+```
+
+---
+
+# Tabla de historial
+
+Las migraciones aplicadas se registran en:
+
+```
+dbo.__FrapperMigrationsHistory
+```
+
+Contiene:
+
+- nombre de migración
+- timestamp de ejecución
+
+---
+
+# Testing
+
+Frapper incluye tests para:
+
+- diff engine
+- snapshot serialization
+- migration emission
+- CLI handlers
+
+Esto ayuda a asegurar estabilidad mientras el proyecto evoluciona.
+
+---
+
+# Extensibilidad futura
+
+La arquitectura fue diseñada para permitir extensiones importantes.
+
+## Nuevos motores de base de datos
+
+Ejemplo futuro:
+
+```
+Frapper.PostgreSql
+Frapper.MySql
+```
+
+Implementando:
+
+```
+IDatabaseSchemaReader
+```
+
+---
+
+## Nuevos tipos de objetos de base de datos
+
+Soporte futuro para:
+
 - indexes
-- programmable objects
+- foreign keys
+- views
+- stored procedures
+- triggers
 
 ---
 
-## Migration emitter
+# Resumen
 
-`Frapper.EFMigrationEmitter` toma operaciones y produce SQL.
+La arquitectura de Frapper separa claramente las responsabilidades:
 
-### Output goals
-
-- SQL claro
-- SQL auditable
-- warnings visibles
-- comportamiento testeable
-
-### Example
-
-```sql
-ALTER TABLE [dbo].[Orders]
-ADD [Status] NVARCHAR(20) NOT NULL DEFAULT 'Pending';
+```
+Introspection
+Snapshot
+Diff
+Migration Plan
+SQL Emission
+Migration Execution
+CLI orchestration
 ```
 
-### Warning example
-
-```sql
--- WARNING: DEFAULT constraint change detected
-```
-
----
-
-## Testing strategy
-
-La arquitectura favorece tests unitarios por módulo.
-
-### Examples
-
-- tests de normalización de tipos
-- tests de snapshot determinístico
-- tests de diff engine
-- tests del SQL emitter
-- tests de warnings
-
-### Why this matters
-
-Un proyecto como Frapper corre el riesgo de romper compatibilidad lógica al crecer.  
-Los tests actúan como red de seguridad para preservar determinismo y confianza en el diff.
-
----
-
-## Design strengths
-
-- Separación clara de responsabilidades
-- Bajo acoplamiento entre lectura, diff y emisión
-- Base sólida para evolución incremental
-- Muy alineado con equipos Dapper
-- Fácil de explicar en entrevistas técnicas
-
----
-
-## Design weaknesses / trade-offs
-
-- Muy centrado hoy en SQL Server
-- Algunas heurísticas futuras serán difíciles sin introducir ambigüedad
-- Rename detection real requiere inferencia cuidadosa
-- Cuanto más soporte de catálogo se agregue, mayor será la complejidad del modelo
-
----
-
-## Future architectural directions
-
-Posibles evoluciones:
-
-- capa explícita de snapshot serialization
-- representación más rica de constraints
-- estrategia extensible por motor de base de datos
-- emitter desacoplado por target format
-- CLI con command handlers dedicados
-- safety layer para cambios destructivos
-
----
-
-## Suggested long-term shape
-
-```text
-Frapper.Cli
-Frapper.Application       (optional future)
-Frapper.Core
-Frapper.SqlServer
-Frapper.Emitters.Sql
-Frapper.Emitters.EFStyle  (optional future)
-Frapper.Serialization     (optional future)
-```
-
-Esta separación no es obligatoria hoy, pero sirve como dirección si el proyecto crece.
-
----
-
-## Summary
-
-Frapper ya tiene una arquitectura convincente para un problema real:  
-**dar versionado de esquema a equipos Dapper sin convertir EF Core en dependencia obligatoria**.
-
-Su valor técnico está en la combinación de:
-
-- introspección real del esquema
-- snapshots determinísticos
-- diff estructural
-- SQL explícito y revisable
+Esto permite que cada componente evolucione de forma independiente y mantiene el sistema simple, predecible y extensible.
