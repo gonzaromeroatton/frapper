@@ -28,25 +28,25 @@ internal sealed class InitHandler
     {
         if (string.IsNullOrWhiteSpace(rawConnection))
         {
-            Console.Error.WriteLine("Error: --connection es requerido.");
+            await Console.Error.WriteLineAsync("Error: --connection es requerido.");
             return 2;
         }
 
         if (string.IsNullOrWhiteSpace(migrationsPath))
         {
-            Console.Error.WriteLine("Error: --migrations-path es requerido.");
+            await Console.Error.WriteLineAsync("Error: --migrations-path es requerido.");
             return 2;
         }
 
         if (string.IsNullOrWhiteSpace(baseSnapshotPath))
         {
-            Console.Error.WriteLine("Error: --base-snapshot es requerido.");
+            await Console.Error.WriteLineAsync("Error: --base-snapshot es requerido.");
             return 2;
         }
 
         if (string.IsNullOrWhiteSpace(snapshotPath))
         {
-            Console.Error.WriteLine("Error: --snapshot es requerido.");
+            await Console.Error.WriteLineAsync("Error: --snapshot es requerido.");
             return 2;
         }
 
@@ -54,7 +54,7 @@ internal sealed class InitHandler
         {
             if (File.Exists(ConfigFileName))
             {
-                Console.Error.WriteLine($"Error: ya existe '{ConfigFileName}' en el directorio actual.");
+                await Console.Error.WriteLineAsync($"Error: ya existe '{ConfigFileName}' en el directorio actual.");
                 return 2;
             }
 
@@ -77,7 +77,7 @@ internal sealed class InitHandler
 
             if (snapshotResult != 0)
             {
-                Console.Error.WriteLine("Error: no fue posible generar los snapshots iniciales.");
+                await Console.Error.WriteLineAsync("Error: no fue posible generar los snapshots iniciales.");
                 return snapshotResult;
             }
 
@@ -93,8 +93,8 @@ internal sealed class InitHandler
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("Error: initialization failed.");
-            Console.Error.WriteLine(ex.Message);
+            await Console.Error.WriteLineAsync("Error: initialization failed.");
+            await Console.Error.WriteLineAsync(ex.Message);
             return 1;
         }
     }

@@ -23,19 +23,19 @@ internal sealed class MigrateApplyHandler
     {
         if (string.IsNullOrWhiteSpace(rawConnection))
         {
-            Console.Error.WriteLine("Error: --connection es requerido.");
+            await Console.Error.WriteLineAsync("Error: --connection es requerido.");
             return 2;
         }
 
         if (string.IsNullOrWhiteSpace(migrationsDirectory))
         {
-            Console.Error.WriteLine("Error: --dir es requerido.");
+            await Console.Error.WriteLineAsync("Error: --dir es requerido.");
             return 2;
         }
 
         if (!Directory.Exists(migrationsDirectory))
         {
-            Console.Error.WriteLine($"Error: no existe el directorio de migraciones '{migrationsDirectory}'.");
+            await Console.Error.WriteLineAsync($"Error: no existe el directorio de migraciones '{migrationsDirectory}'.");
             return 2;
         }
 
@@ -89,8 +89,8 @@ internal sealed class MigrateApplyHandler
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("Error: migrate apply failed.");
-            Console.Error.WriteLine(ex.Message);
+            await Console.Error.WriteLineAsync("Error: migrate apply failed.");
+            await Console.Error.WriteLineAsync(ex.Message);
             return 1;
         }
     }

@@ -32,7 +32,7 @@ internal sealed class DiffHandler
     {
         if (string.IsNullOrWhiteSpace(basePath))
         {
-            Console.Error.WriteLine("Base snapshot path is required.");
+            await Console.Error.WriteLineAsync("Base snapshot path is required.");
             return 1;
         }
 
@@ -41,7 +41,7 @@ internal sealed class DiffHandler
 
         if (hasTarget == hasConnection)
         {
-            Console.Error.WriteLine("Debe especificarse exactamente uno de estos parámetros: --target o --connection.");
+            await Console.Error.WriteLineAsync("Debe especificarse exactamente uno de estos parámetros: --target o --connection.");
             return 2;
         }
 
@@ -49,7 +49,7 @@ internal sealed class DiffHandler
         {
             if (!File.Exists(basePath))
             {
-                Console.Error.WriteLine($"Base snapshot file not found: {basePath}");
+                await Console.Error.WriteLineAsync($"Base snapshot file not found: {basePath}");
                 return 1;
             }
 
@@ -62,7 +62,7 @@ internal sealed class DiffHandler
             {
                 if (!File.Exists(targetPath!))
                 {
-                    Console.Error.WriteLine($"Target snapshot file not found: {targetPath}");
+                    await Console.Error.WriteLineAsync($"Target snapshot file not found: {targetPath}");
                     return 1;
                 }
 
@@ -90,8 +90,8 @@ internal sealed class DiffHandler
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("Diff operation failed.");
-            Console.Error.WriteLine(ex.Message);
+            await Console.Error.WriteLineAsync("Diff operation failed.");
+            await Console.Error.WriteLineAsync(ex.Message);
             return 1;
         }
     }

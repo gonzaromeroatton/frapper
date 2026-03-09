@@ -28,13 +28,13 @@ internal sealed class SnapshotHandler
     {
         if (string.IsNullOrWhiteSpace(rawConnection))
         {
-            Console.Error.WriteLine("Connection is required.");
+            await Console.Error.WriteLineAsync("Connection is required.");
             return 1;
         }
 
         if (string.IsNullOrWhiteSpace(outPath))
         {
-            Console.Error.WriteLine("Output snapshot path is required.");
+            await Console.Error.WriteLineAsync("Output snapshot path is required.");
             return 1;
         }
 
@@ -68,8 +68,8 @@ internal sealed class SnapshotHandler
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("Snapshot generation failed.");
-            Console.Error.WriteLine(ex.Message);
+            await Console.Error.WriteLineAsync("Snapshot generation failed.");
+            await Console.Error.WriteLineAsync(ex.Message);
             return 1;
         }
     }
