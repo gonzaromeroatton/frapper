@@ -1,17 +1,16 @@
-using Frapper.Cli.Configuration;
 using Frapper.Core.Domain.Diff;
-using Frapper.Core.Serialization;
+using Frapper.Core.Snapshot;
 using Frapper.EFMigrationEmitter;
 
 namespace Frapper.Cli.Commands.Migrate;
 
 internal sealed class MigrateAddHandler
 {
-    private readonly FrapperConfiguration _configuration;
+    private readonly ISchemaSnapshotSerializer _serializer;
 
-    public MigrateAddHandler(FrapperConfiguration configuration)
+    public MigrateAddHandler(ISchemaSnapshotSerializer serializer)
     {
-        _configuration = configuration;
+        _serializer = serializer;
     }
 
     public async Task<int> RunAsync(
@@ -22,6 +21,12 @@ internal sealed class MigrateAddHandler
         bool allowDestructiveChanges,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(migrationName))
+        {
+            Console.Error.WriteLine("Error: migrationName es requerido.");
+            return 2;
+        }
+
         if (!File.Exists(snapshotPath))
         {
             Console.Error.WriteLine($"Error: no se encontró el snapshot deseado en '{snapshotPath}'.");
@@ -35,12 +40,13 @@ internal sealed class MigrateAddHandler
         }
 
         var desiredJson = await File.ReadAllTextAsync(snapshotPath, cancellationToken);
-        var desiredSchema = SchemaSnapshotSerializer.Deserialize(desiredJson);
+        var desiredSchema = _serializer.Deserialize(desiredJson);
 
         var baseJson = await File.ReadAllTextAsync(baseSnapshotPath, cancellationToken);
-        var baseSchema = SchemaSnapshotSerializer.Deserialize(baseJson);
+        var baseSchema = _serializer.Deserialize(baseJson);
 
         var differ = new SchemaDiffer();
+
         var plan = differ.Diff(
             baseSchema,
             desiredSchema,
@@ -62,9 +68,9 @@ internal sealed class MigrateAddHandler
         var outputPath = Path.Combine(outDir, fileName);
 
         var sql = SqlMigrationEmitter.Emit(plan);
+
         await File.WriteAllTextAsync(outputPath, sql, cancellationToken);
 
-        // El nuevo estado deseado pasa a ser la nueva base
         await File.WriteAllTextAsync(baseSnapshotPath, desiredJson, cancellationToken);
 
         Console.WriteLine($"Migración generada: {outputPath}");

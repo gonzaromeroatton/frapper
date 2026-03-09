@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Frapper.Cli.Configuration;
+using Frapper.Core.Snapshot;
 
 namespace Frapper.Cli.Commands.Migrate;
 
@@ -64,7 +65,7 @@ internal static class MigrateAddCommand
                 return 2;
             }
 
-            var handler = new MigrateAddHandler(configuration);
+            var handler = new MigrateAddHandler(new SchemaSnapshotSerializer());
 
             return await handler.RunAsync(
                 name,
