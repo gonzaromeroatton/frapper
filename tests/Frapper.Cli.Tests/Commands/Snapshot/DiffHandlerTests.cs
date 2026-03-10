@@ -29,7 +29,7 @@ public sealed class DiffHandlerTests
     }
 
     [Fact]
-    public async Task RunAsync_ShouldDiffBaseSnapshotAgainstLiveDatabase_WhenConnectionIsProvided()
+    public async Task RunAsync_ShouldShowDroppedColumn_WhenLiveDatabaseHasColumnNotPresentInBaseSnapshot()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
@@ -104,7 +104,7 @@ public sealed class DiffHandlerTests
             Assert.Equal(0, exitCode);
             Assert.True(string.IsNullOrWhiteSpace(stdErr), $"Expected no stderr output, but got: {stdErr}");
             Assert.Contains("Diff completed successfully.", stdOut, StringComparison.Ordinal);
-            Assert.Contains("Added columns: 1", stdOut, StringComparison.Ordinal);
+            Assert.Contains("Dropped columns: 1", stdOut, StringComparison.Ordinal);
             Assert.Contains("Total operations: 1", stdOut, StringComparison.Ordinal);
         }
         finally
@@ -228,6 +228,102 @@ public sealed class DiffHandlerTests
                 "Debe especificarse exactamente uno de estos parámetros: --target o --connection.",
                 stdErr,
                 StringComparison.Ordinal);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+
+            if (Directory.Exists(tempDirectory))
+            {
+                Directory.Delete(tempDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task RunAsync_ShouldShowAddedColumn_WhenBaseSnapshotHasColumnNotPresentInLiveDatabase()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+
+        try
+        {
+            var basePath = Path.Combine(tempDirectory, "schema.snapshot.base.json");
+
+            var baseSchema = new DatabaseSchema(
+                "SqlServer",
+                new[]
+                {
+                new DbTable(
+                    "dbo",
+                    "Products",
+                    new[]
+                    {
+                        new DbColumn(1, "Id", new SqlType("int"), false, true, null),
+                        new DbColumn(2, "Name", new SqlType("nvarchar", 100), false, false, null),
+                        new DbColumn(3, "Price", new SqlType("decimal", null, 18, 2), false, false, null),
+                        new DbColumn(4, "CreatedAt", new SqlType("datetime2"), false, false, "GETUTCDATE()")
+                    },
+                    new DbPrimaryKey("PK_Products", new[] { "Id" }, true))
+                },
+                "1.0");
+
+            var liveSchema = new DatabaseSchema(
+                "SqlServer",
+                new[]
+                {
+                new DbTable(
+                    "dbo",
+                    "Products",
+                    new[]
+                    {
+                        new DbColumn(1, "Id", new SqlType("int"), false, true, null),
+                        new DbColumn(2, "Name", new SqlType("nvarchar", 100), false, false, null),
+                        new DbColumn(3, "Price", new SqlType("decimal", null, 18, 2), false, false, null)
+                    },
+                    new DbPrimaryKey("PK_Products", new[] { "Id" }, true))
+                },
+                "1.0");
+
+            var serializer = new SchemaSnapshotSerializer();
+            var baseJson = serializer.Serialize(baseSchema);
+            await File.WriteAllTextAsync(basePath, baseJson);
+
+            var configuration = BuildConfiguration(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:Default"] = "Server=test;Database=Frapper;Trusted_Connection=True;"
+            });
+
+            var schemaReader = new FakeDatabaseSchemaReader(liveSchema);
+            var handler = new DiffHandler(configuration, schemaReader, serializer);
+
+            await using var outWriter = new StringWriter();
+            await using var errorWriter = new StringWriter();
+
+            Console.SetOut(outWriter);
+            Console.SetError(errorWriter);
+
+            outWriter.GetStringBuilder().Clear();
+            errorWriter.GetStringBuilder().Clear();
+
+            var exitCode = await handler.RunAsync(
+                basePath,
+                targetPath: null,
+                rawConnection: "Default",
+                cancellationToken: CancellationToken.None);
+
+            var stdOut = outWriter.ToString();
+            var stdErr = errorWriter.ToString();
+
+            Assert.Equal(0, exitCode);
+            Assert.True(string.IsNullOrWhiteSpace(stdErr), $"Expected no stderr output, but got: {stdErr}");
+            Assert.Contains("Diff completed successfully.", stdOut, StringComparison.Ordinal);
+            Assert.Contains("Added columns: 1", stdOut, StringComparison.Ordinal);
+            Assert.Contains("Total operations: 1", stdOut, StringComparison.Ordinal);
         }
         finally
         {
